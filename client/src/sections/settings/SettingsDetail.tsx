@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { WidgetSummary } from '@nohm/shared';
 import { useI18n } from '../../i18n/I18nProvider';
 import { SERVICE_CATALOG, type ServiceDefinition } from './serviceCatalog';
@@ -24,7 +24,10 @@ export function SettingsDetail() {
   const [values, setValues] = useState<Record<string, string>>({});
   const [saveState, setSaveState] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
   const [locating, setLocating] = useState(false);
-  const [locationMsg, setLocationMsg] = useState<string | null>(null);
+  const [panelMsg, setPanelMsg] = useState<string | null>(null);
+  const [githubCode, setGithubCode] = useState<string | null>(null);
+  const [githubBusy, setGithubBusy] = useState(false);
+  const githubAbort = useRef(false);
   const [wizard, setWizard] = useState(false);
   const [visibleSections, setVisibleSections] = useState(readVisibleSections);
   const [refreshMultiplier, setRefreshMultiplier] = useState(readRefreshMultiplier);
@@ -36,17 +39,67 @@ export function SettingsDetail() {
     void fetch('/api/settings/services').then((response) => response.ok ? response.json() : { configured: [], oauthReady: [] }).then((payload) => { setConfigured(payload.configured ?? []); setOauthReady(payload.oauthReady ?? []); }).catch(() => { setConfigured([]); setOauthReady([]); });
   }, []);
 
+  const closeEditor = () => {
+    githubAbort.current = true;
+    setGithubCode(null);
+    setGithubBusy(false);
+    setEditing(null);
+  };
+
   const openEditor = (service: ServiceDefinition) => {
+    githubAbort.current = true;
     setEditing(service);
     setValues(Object.fromEntries((service.fields ?? []).map((field) => [field.key, field.type === 'checkbox' ? '0' : ''])));
     setSaveState('idle');
-    setLocationMsg(null);
+    setPanelMsg(null);
+    setGithubCode(null);
+    setGithubBusy(false);
+  };
+
+  // GitHub device flow: ask for a code, send the user to github.com/login/device, then poll until
+  // the token comes back. No PAT, no callback URL — just a one-time OAuth client id saved above.
+  const connectGitHub = async () => {
+    setPanelMsg(null);
+    setSaveState('idle');
+    setGithubBusy(true);
+    githubAbort.current = false;
+    try {
+      const start = await fetch('/api/settings/oauth/github/device', { method: 'POST' });
+      if (start.status === 409) { setPanelMsg(t('settings.githubNeedsClientId')); return; }
+      if (!start.ok) throw new Error('device start failed');
+      const device = await start.json() as { userCode: string; verificationUri: string; deviceCode: string; interval: number; expiresIn: number };
+      setGithubCode(device.userCode);
+      window.open(device.verificationUri, '_blank', 'noopener,noreferrer');
+      let interval = device.interval;
+      const deadline = Date.now() + device.expiresIn * 1000;
+      while (Date.now() < deadline && !githubAbort.current) {
+        await new Promise((resolve) => setTimeout(resolve, interval * 1000));
+        if (githubAbort.current) return;
+        const poll = await fetch('/api/settings/oauth/github/poll', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ deviceCode: device.deviceCode }) });
+        const result = await poll.json() as { status: string; username?: string; interval?: number };
+        if (result.status === 'authorized') {
+          setGithubCode(null);
+          setPanelMsg(t('settings.githubConnected', { name: result.username ?? '' }));
+          setConfigured((current) => current.includes('github') ? current : [...current, 'github']);
+          return;
+        }
+        if (result.status === 'error') { setGithubCode(null); setPanelMsg(t('settings.githubFailed')); return; }
+        if (result.interval) interval = result.interval;
+      }
+      setGithubCode(null);
+      if (!githubAbort.current) setPanelMsg(t('settings.githubFailed'));
+    } catch {
+      setGithubCode(null);
+      setPanelMsg(t('settings.githubFailed'));
+    } finally {
+      setGithubBusy(false);
+    }
   };
 
   const detectMyLocation = async () => {
-    if (!('geolocation' in navigator)) { setLocationMsg(t('settings.locationDenied')); return; }
+    if (!('geolocation' in navigator)) { setPanelMsg(t('settings.locationDenied')); return; }
     setLocating(true);
-    setLocationMsg(null);
+    setPanelMsg(null);
     try {
       const position = await new Promise<GeolocationPosition>((resolve, reject) => {
         navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 10_000, maximumAge: 5 * 60_000 });
@@ -66,9 +119,9 @@ export function SettingsDetail() {
         body: JSON.stringify({ lat, lon }),
       });
       setConfigured((current) => current.includes('weather') ? current : [...current, 'weather']);
-      setLocationMsg(t('settings.locationSet', { coords: `${lat.toFixed(3)}, ${lon.toFixed(3)}` }));
+      setPanelMsg(t('settings.locationSet', { coords: `${lat.toFixed(3)}, ${lon.toFixed(3)}` }));
     } catch {
-      setLocationMsg(t('settings.locationDenied'));
+      setPanelMsg(t('settings.locationDenied'));
     } finally {
       setLocating(false);
     }
@@ -165,7 +218,7 @@ export function SettingsDetail() {
           <form className="connection-panel" onSubmit={(event) => { event.preventDefault(); void saveConnection(); }}>
             <div className="connection-panel__heading">
               <div><span className="settings-eyebrow">{t('settings.connection')}</span><h3>{editing.name}</h3></div>
-              <button type="button" className="icon-button" aria-label={t('settings.close')} onClick={() => setEditing(null)}>×</button>
+              <button type="button" className="icon-button" aria-label={t('settings.close')} onClick={closeEditor}>×</button>
             </div>
             <div className="connection-fields">
               {editing.fields?.map((field) => field.type === 'checkbox' ? (
@@ -181,12 +234,15 @@ export function SettingsDetail() {
               ))}
             </div>
             <div className="connection-actions">
-              <p className={`connection-feedback connection-feedback--${locationMsg ? 'saved' : saveState}`} role="status">
-                {locationMsg ?? (saveState === 'saved' ? t('settings.savedRestart') : saveState === 'error' ? t('settings.saveError') : t('settings.encryptedHint'))}
+              <p className={`connection-feedback connection-feedback--${panelMsg ? 'saved' : saveState}`} role="status">
+                {githubCode
+                  ? t('settings.githubCode', { code: githubCode })
+                  : (panelMsg ?? (saveState === 'saved' ? t('settings.savedRestart') : saveState === 'error' ? t('settings.saveError') : t('settings.encryptedHint')))}
               </p>
               <div className="connection-actions__buttons">
                 {editing.id === 'weather' && <button type="button" className="settings-button settings-button--ghost" disabled={locating} onClick={() => void detectMyLocation()}>{locating ? t('settings.locating') : t('settings.useLocation')}</button>}
-                {editing.oauth && <button type="button" className="settings-button settings-button--ghost" disabled={!oauthReady.includes(editing.oauth)} onClick={() => window.open(`/api/settings/oauth/${editing.oauth}/start`, '_blank', 'noopener,noreferrer')}>{oauthReady.includes(editing.oauth) ? t('settings.oauthConnect') : t('settings.oauthAfterRestart')}</button>}
+                {editing.oauth === 'github' && <button type="button" className="settings-button settings-button--ghost" disabled={githubBusy} onClick={() => void connectGitHub()}>{githubBusy ? t('settings.githubConnecting') : t('settings.githubSignIn')}</button>}
+                {(editing.oauth === 'gmail' || editing.oauth === 'spotify') && <button type="button" className="settings-button settings-button--ghost" disabled={!oauthReady.includes(editing.oauth)} onClick={() => window.open(`/api/settings/oauth/${editing.oauth}/start`, '_blank', 'noopener,noreferrer')}>{oauthReady.includes(editing.oauth) ? t('settings.oauthConnect') : t('settings.oauthAfterRestart')}</button>}
                 <button type="submit" className="settings-button" disabled={saveState === 'saving'}>{saveState === 'saving' ? t('settings.saving') : t('settings.save')}</button>
               </div>
             </div>

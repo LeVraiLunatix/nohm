@@ -191,6 +191,90 @@ app.get('/api/settings/oauth/gmail/callback', async (req, res) => {
   } catch { res.status(502).send(oauthResultPage('Connexion impossible', 'Google n’a pas accepté la connexion. Vérifiez votre client OAuth et son URI de redirection.')); }
 });
 
+// GitHub device flow — no callback URL and no client secret. The user registers a minimal OAuth
+// app once (only to obtain a client id, which is not a secret), saves it, then "Se connecter"
+// shows a short code to type at github.com/login/device and the token lands here. No PAT to paste,
+// and the resulting OAuth token works with the events API that fine-grained PATs don't.
+const GITHUB_DEVICE_SCOPE = 'repo read:user';
+
+function githubOauthClientId(): string | undefined {
+  return serviceSettingsStore.get('github').GITHUB_OAUTH_CLIENT_ID || process.env.GITHUB_OAUTH_CLIENT_ID || undefined;
+}
+
+app.post('/api/settings/oauth/github/device', async (_req, res) => {
+  const clientId = githubOauthClientId();
+  if (!clientId) {
+    res.status(409).json({ error: 'github-client-id-missing' });
+    return;
+  }
+  try {
+    const response = await fetch('https://github.com/login/device/code', {
+      method: 'POST',
+      headers: { accept: 'application/json', 'content-type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({ client_id: clientId, scope: GITHUB_DEVICE_SCOPE }),
+    });
+    const body = (await response.json()) as { device_code?: string; user_code?: string; verification_uri?: string; interval?: number; expires_in?: number };
+    if (!response.ok || !body.device_code || !body.user_code || !body.verification_uri) throw new Error('device code request failed');
+    res.json({
+      deviceCode: body.device_code,
+      userCode: body.user_code,
+      verificationUri: body.verification_uri,
+      interval: body.interval ?? 5,
+      expiresIn: body.expires_in ?? 900,
+    });
+  } catch {
+    res.status(502).json({ error: 'github-device-start-failed' });
+  }
+});
+
+const githubPollSchema = z.object({ deviceCode: z.string().min(1) });
+
+app.post('/api/settings/oauth/github/poll', async (req, res) => {
+  const clientId = githubOauthClientId();
+  const parsed = githubPollSchema.safeParse(req.body);
+  if (!clientId || !parsed.success) {
+    res.status(400).json({ error: 'github-poll-invalid' });
+    return;
+  }
+  try {
+    const response = await fetch('https://github.com/login/oauth/access_token', {
+      method: 'POST',
+      headers: { accept: 'application/json', 'content-type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({
+        client_id: clientId,
+        device_code: parsed.data.deviceCode,
+        grant_type: 'urn:ietf:params:oauth:grant-type:device_code',
+      }),
+    });
+    const body = (await response.json()) as { access_token?: string; error?: string; interval?: number };
+    if (body.access_token) {
+      const who = await fetch('https://api.github.com/user', {
+        headers: { authorization: `Bearer ${body.access_token}`, accept: 'application/vnd.github+json' },
+      });
+      const user = (await who.json()) as { login?: string };
+      if (!who.ok || !user.login) throw new Error('user lookup failed');
+      await serviceSettingsStore.set('github', {
+        ...serviceSettingsStore.get('github'),
+        GITHUB_TOKEN: body.access_token,
+        GITHUB_USERNAME: user.login,
+      });
+      res.json({ status: 'authorized', username: user.login });
+      return;
+    }
+    if (body.error === 'authorization_pending') {
+      res.json({ status: 'pending' });
+      return;
+    }
+    if (body.error === 'slow_down') {
+      res.json({ status: 'pending', interval: body.interval ?? 10 });
+      return;
+    }
+    res.json({ status: 'error', error: body.error ?? 'unknown' });
+  } catch {
+    res.status(502).json({ error: 'github-poll-failed' });
+  }
+});
+
 app.put('/api/settings/services/:serviceId', async (req, res) => {
   const { serviceId } = req.params;
   if (!isConfigurableServiceId(serviceId)) {

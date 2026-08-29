@@ -8,7 +8,19 @@ export const serviceSettingsSchemas = {
   weather: z.object({ WEATHER_LAT: z.string().trim().min(1), WEATHER_LON: z.string().trim().min(1) }),
   calendar: z.object({ ICLOUD_USERNAME: z.string().trim().email(), ICLOUD_APP_PASSWORD: z.string().min(1) }),
   gmail: z.object({ GOOGLE_CLIENT_ID: z.string().trim().min(1), GOOGLE_CLIENT_SECRET: z.string().min(1) }),
-  github: z.object({ GITHUB_USERNAME: z.string().trim().min(1), GITHUB_TOKEN: z.string().min(1), GITHUB_ISSUES_TOKEN: z.string().optional() }),
+  github: z
+    .object({
+      // The device-flow "Se connecter avec GitHub" button needs only this (a public value, not a
+      // secret); it fills in the username and token itself. Manual PAT users still provide the
+      // pair directly, so every field is optional and the provider decides if it has enough.
+      GITHUB_OAUTH_CLIENT_ID: z.string().trim().min(1).optional(),
+      GITHUB_USERNAME: z.string().trim().min(1).optional(),
+      GITHUB_TOKEN: z.string().min(1).optional(),
+      GITHUB_ISSUES_TOKEN: z.string().optional(),
+    })
+    .refine((v) => v.GITHUB_OAUTH_CLIENT_ID || (v.GITHUB_USERNAME && v.GITHUB_TOKEN), {
+      message: 'provide the OAuth client id, or a username + token pair',
+    }),
   steam: z.object({ STEAM_ID: z.string().regex(/^\d{17}$/), STEAM_API_KEY: z.string().min(1) }),
   cider: z.object({ CIDER_RPC_URL: z.string().url(), CIDER_RPC_TOKEN: z.string().optional(), CIDER_RPC_UNAUTHENTICATED: z.enum(['0', '1']).optional() }),
   spotify: z.object({ SPOTIFY_CLIENT_ID: z.string().trim().min(1), SPOTIFY_CLIENT_SECRET: z.string().min(1) }),
