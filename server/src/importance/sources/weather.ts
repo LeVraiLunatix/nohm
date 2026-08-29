@@ -1,4 +1,4 @@
-import type { WeatherData } from '@personal-dashboard/shared';
+import type { WeatherData } from '@nohm/shared';
 
 import type { Candidate } from '../types.js';
 import { allShapes } from './shapes.js';

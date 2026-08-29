@@ -1,4 +1,4 @@
-import type { ClashOfClansData } from '@personal-dashboard/shared';
+import type { ClashOfClansData } from '@nohm/shared';
 
 import type { Candidate } from '../types.js';
 import { allShapes } from './shapes.js';
@@ -47,7 +47,7 @@ function leagueCandidate(profile: ClashOfClansData['profile']): Candidate | unde
   return {
     id: `clash-of-clans:league:${profile.league.name}`, source: 'clash-of-clans', kind: 'clash-of-clans', score: 24, shapes: ['tile'],
     kicker: 'Current league', title: profile.league.name,
-    detail: `${profile.trophies.toLocaleString()} trophies`,
+    detail: `${profile.trophies.toLocaleString('en-US')} trophies`,
     href: playerHref(profile.tag),
     render: { type: 'clash-of-clans-moment', kind: 'league', leagueIconUrl: profile.league.iconUrl, trophies: profile.trophies },
   };
@@ -101,7 +101,7 @@ function raidWeekendCandidate(raidWeekend: ClashOfClansData['raidWeekend'], prof
     // Generic fallback text (used verbatim only by the tile-detail default) — the tile itself
     // overrides this with a personal-loot-only render, and secondary/hero use the full render
     // payload below, so this string only surfaces if a card ever falls through to plain `detail`.
-    detail: `${raidWeekend.personalLoot.toLocaleString()} looted by you · ${raidWeekend.capitalTotalLoot.toLocaleString()} clan total`,
+    detail: `${raidWeekend.personalLoot.toLocaleString('en-US')} looted by you · ${raidWeekend.capitalTotalLoot.toLocaleString('en-US')} clan total`,
     href: clanHref(profile.clanTag),
     render: {
       type: 'clash-of-clans-moment', kind: 'raid-weekend',

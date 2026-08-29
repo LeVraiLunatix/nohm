@@ -25,7 +25,7 @@ import 'dotenv/config';
 import { readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { valorantMatchSchema, type ValorantMatch } from '@personal-dashboard/shared';
+import { valorantMatchSchema, type ValorantMatch } from '@nohm/shared';
 import { createDatabase } from '../src/db/client.js';
 import { ValorantHistoryStore } from '../src/valorantHistory.js';
 import { mergeMatches } from '../src/providers/valorant.js';

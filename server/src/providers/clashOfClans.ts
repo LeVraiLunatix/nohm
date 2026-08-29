@@ -1,4 +1,4 @@
-import { clashOfClansSchema, type ClashOfClansData } from '@personal-dashboard/shared';
+import { clashOfClansSchema, type ClashOfClansData } from '@nohm/shared';
 import type { Provider } from '../scheduler.js';
 import { toIsoTimestamp } from './clashRoyale.js';
 import {

@@ -1,5 +1,5 @@
-import type { AiNewsData, GmailData, IMessageData, NewsData } from '@personal-dashboard/shared';
-import { iso } from '@personal-dashboard/shared';
+import type { AiNewsData, GmailData, IMessageData, NewsData } from '@nohm/shared';
+import { iso } from '@nohm/shared';
 
 // ── Gmail ────────────────────────────────────────────────────────────────────────────────────
 
@@ -8,7 +8,7 @@ export function gmail(now: Date): GmailData {
     unreadThreads: 5,
     threads: [
       { id: 't1', from: 'Newsletter', subject: 'This week in open source', date: iso(now, -3), unread: true, url: '#' },
-      { id: 't2', from: 'GitHub', subject: '[yourname/personal-dashboard] Review requested', date: iso(now, -5), unread: true, url: '#' },
+      { id: 't2', from: 'GitHub', subject: '[yourname/nohm] Review requested', date: iso(now, -5), unread: true, url: '#' },
       { id: 't3', from: 'Sam', subject: 'Re: dinner Friday?', date: iso(now, -8), unread: false, url: '#' },
       { id: 't4', from: 'Bank', subject: 'Your monthly statement is ready', date: iso(now, -20), unread: true, url: '#' },
       { id: 't5', from: 'Spotify', subject: 'Your 2026 Wrapped is here', date: iso(now, -30), unread: true, url: '#' },

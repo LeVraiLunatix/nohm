@@ -10,7 +10,7 @@ import type {
   SpotifyData,
   SteamData,
   WeatherData,
-} from '@personal-dashboard/shared';
+} from '@nohm/shared';
 import type { AiUsageByTool } from './useCommandCenterData';
 import { AiUsageSecondary, AiUsageTrend } from './secondary/ai';
 import { CalendarAgendaSecondary } from './secondary/calendar';

@@ -1,4 +1,4 @@
-import type { SonarCloudData, SonarProject } from '@personal-dashboard/shared';
+import type { SonarCloudData, SonarProject } from '@nohm/shared';
 import type { Candidate, SonarMoments } from '../types.js';
 import { allShapes } from './shapes.js';
 

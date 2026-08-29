@@ -1,4 +1,4 @@
-import type { PowerData, PowerHour } from '@personal-dashboard/shared';
+import type { PowerData, PowerHour } from '@nohm/shared';
 
 import type { Candidate } from '../types.js';
 

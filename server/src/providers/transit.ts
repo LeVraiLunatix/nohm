@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { transitDataSchema, type TransitData } from '@personal-dashboard/shared';
+import { transitDataSchema, type TransitData } from '@nohm/shared';
 import type { Provider } from '../scheduler.js';
 import { ENTUR_CLIENT_NAME, enturReverseGeocode } from './entur.js';
 

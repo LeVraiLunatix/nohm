@@ -32,6 +32,8 @@ import { createSonarCloudProvider } from './sonarCloud.js';
 import { createSystemProvider } from './system.js';
 import { createTransitProvider, type TransitProvider } from './transit.js';
 import { createWeatherProvider, type WeatherProvider } from './weather.js';
+import { createCiderProvider } from './cider.js';
+import { createLastFmProvider } from './lastfm.js';
 
 export interface Providers {
   all: Provider[];
@@ -97,6 +99,8 @@ export function createProviders(
         createNewsProvider(config.news.feeds),
         createAiNewsProvider(config.aiNews.feeds),
         createSpotifyProvider(env.spotify, spotifySnapshot, spotifyHistory),
+        createCiderProvider(env.cider),
+        createLastFmProvider(env.lastfm),
         createHealthProvider(health, env.timezone, {
           steps: config.health.stepGoal,
           activeEnergyKcal: config.health.moveGoalKcal,

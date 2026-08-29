@@ -1,6 +1,8 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import App from './App';
+import { I18nProvider } from './i18n/I18nProvider';
+import { GameModeProvider } from './gameMode/GameModeProvider';
 import { applyThemeMode, loadThemeMode } from './lib/theme';
 import './index.css';
 
@@ -20,7 +22,9 @@ const { DemoBanner } = isDemo ? await import('./demo/DemoBanner') : { DemoBanner
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    {DemoBanner && <DemoBanner />}
-    <App />
+    <I18nProvider>
+      {DemoBanner && <DemoBanner />}
+      <GameModeProvider><App /></GameModeProvider>
+    </I18nProvider>
   </StrictMode>,
 );

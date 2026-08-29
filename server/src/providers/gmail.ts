@@ -1,5 +1,5 @@
 import { google } from 'googleapis';
-import { gmailSchema, type GmailData } from '@personal-dashboard/shared';
+import { gmailSchema, type GmailData } from '@nohm/shared';
 import { readGmailToken, writeGmailToken } from '../gmailToken.js';
 import type { Provider } from '../scheduler.js';
 

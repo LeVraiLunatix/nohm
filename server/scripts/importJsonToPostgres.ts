@@ -8,7 +8,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import { z } from 'zod';
 import type { JSONValue, TransactionSql } from 'postgres';
-import { healthDaySchema, spotifySchema, usageHistoryPointSchema } from '@personal-dashboard/shared';
+import { healthDaySchema, spotifySchema, usageHistoryPointSchema } from '@nohm/shared';
 import { createDatabase } from '../src/db/client.js';
 
 const databaseUrl = process.env.DATABASE_URL;

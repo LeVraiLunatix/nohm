@@ -1,4 +1,4 @@
-import { valorantSchema, type ValorantData, type ValorantMatch } from '@personal-dashboard/shared';
+import { valorantSchema, type ValorantData, type ValorantMatch } from '@nohm/shared';
 import type { Provider } from '../scheduler.js';
 import type { ValorantHistoryStore } from '../valorantHistory.js';
 

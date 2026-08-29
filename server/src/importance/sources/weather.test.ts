@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { WeatherData } from '@personal-dashboard/shared';
+import type { WeatherData } from '@nohm/shared';
 import { weatherCandidates } from './weather.js';
 
 describe('weatherCandidates', () => {

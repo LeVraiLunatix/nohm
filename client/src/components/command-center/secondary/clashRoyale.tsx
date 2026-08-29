@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
-import type { CommandCenterSlot } from '@personal-dashboard/shared';
-import { pathOfLegendsDisplayLeagueNumber } from '@personal-dashboard/shared';
+import type { CommandCenterSlot } from '@nohm/shared';
+import { pathOfLegendsDisplayLeagueNumber } from '@nohm/shared';
 import { CLASH_ROYALE_TROPHY_ICON_URL, clashRoyaleArenaArt, clashRoyaleBattleIcon, clashRoyaleLeagueArt } from '../../../lib/clashRoyale';
 import { ClashCrownScore, TrimmedBattleModeIcon } from '../../../widgets/ClashRoyaleWidgets';
 

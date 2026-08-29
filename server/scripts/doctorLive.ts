@@ -6,12 +6,12 @@ import { promisify } from 'node:util';
 const execFileAsync = promisify(execFile);
 const port = Number(process.env.PORT ?? 4821);
 const uid = process.getuid?.() ?? 501;
-const serviceLabel = 'local.personal-dashboard';
+const serviceLabel = 'local.nohm';
 const serviceRoot =
-  process.env.PERSONAL_DASHBOARD_SERVICE_ROOT ?? `${homedir()}/.local/share/personal-dashboard/repo`;
+  process.env.NOHM_SERVICE_ROOT ?? process.env.PERSONAL_DASHBOARD_SERVICE_ROOT ?? `${homedir()}/.local/share/nohm/repo`;
 const runtimeEnvPath =
-  process.env.PERSONAL_DASHBOARD_RUNTIME_ENV_PATH ??
-  `${homedir()}/.local/share/personal-dashboard/state/.env`;
+  process.env.NOHM_RUNTIME_ENV_PATH ?? process.env.PERSONAL_DASHBOARD_RUNTIME_ENV_PATH ??
+  `${homedir()}/.local/share/nohm/state/.env`;
 
 type Check = {
   label: string;
@@ -142,7 +142,7 @@ async function main(): Promise<void> {
   const healthCheck = await checkHealthEndpoint();
   checks.push(healthCheck);
 
-  console.log('Personal Dashboard live-runtime report');
+  console.log('Nohm live-runtime report');
   for (const check of checks) {
     console.log(`${check.ok ? 'PASS' : 'CHECK'}  ${check.label}: ${check.detail}`);
   }

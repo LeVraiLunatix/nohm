@@ -1,4 +1,4 @@
-import type { AiUsageToolData } from '@personal-dashboard/shared';
+import type { AiUsageToolData } from '@nohm/shared';
 import { motion } from 'motion/react';
 import { relativeTime } from '../../lib/time';
 import { formatCompactNumber } from '../../lib/format';

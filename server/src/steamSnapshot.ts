@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { steamGameSchema, steamLeaderboardEntrySchema, steamSchema, type SteamData, type SteamLeaderboardEntry } from '@personal-dashboard/shared';
+import { steamGameSchema, steamLeaderboardEntrySchema, steamSchema, type SteamData, type SteamLeaderboardEntry } from '@nohm/shared';
 import type { Database } from './db/client.js';
 
 const steamLibrarySnapshotSchema = z.object({

@@ -1,6 +1,6 @@
 import { createHash, timingSafeEqual } from 'node:crypto';
 import express, { type Express, type NextFunction, type Request, type Response } from 'express';
-import type { HealthIngest } from '@personal-dashboard/shared';
+import type { HealthIngest } from '@nohm/shared';
 import { parseHealthIngestBody } from './healthIngest.js';
 import { shouldRefreshFor, verifyGithubSignature, type RawBodyRequest } from './githubWebhook.js';
 import { todayInZone } from './providers/health.js';

@@ -1,4 +1,4 @@
-import type { GmailData } from '@personal-dashboard/shared';
+import type { GmailData } from '@nohm/shared';
 import { useWidget } from '../useWidget';
 import { WidgetCard } from '../components/WidgetCard';
 import { relativeTime } from '../lib/time';

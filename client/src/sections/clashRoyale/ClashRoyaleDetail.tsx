@@ -1,4 +1,4 @@
-import type { ClashRoyaleData } from '@personal-dashboard/shared';
+import type { ClashRoyaleData } from '@nohm/shared';
 import { useWidget } from '../../useWidget';
 import { WidgetBody, WidgetShell } from '../../components/WidgetCard';
 import { ClashRoyaleBattleLog, ClashRoyaleDeck, ClashRoyaleProfile } from '../../widgets/ClashRoyaleWidgets';

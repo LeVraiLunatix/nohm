@@ -1,4 +1,4 @@
-import type { CommandCenterSlot } from '@personal-dashboard/shared';
+import type { CommandCenterSlot } from '@nohm/shared';
 
 /** A game's name, current mode, and session length are separate facts, so give each its own line
  * instead of squeezing two facts into the duration line. */

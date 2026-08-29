@@ -1,4 +1,4 @@
-import type { HealthData } from '@personal-dashboard/shared';
+import type { HealthData } from '@nohm/shared';
 
 import type { Candidate } from '../types.js';
 import { allShapes } from './shapes.js';
@@ -11,7 +11,7 @@ function hasActivityData(day: HealthData['history'][number]): boolean {
 function activitySummary(day: HealthData['history'][number]): { title: string; detail: string } {
   if (day.steps !== undefined) {
     return {
-      title: `${Math.round(day.steps).toLocaleString()} steps`,
+      title: `${Math.round(day.steps).toLocaleString('en-US')} steps`,
       detail: 'Open Health for the full activity rings',
     };
   }
@@ -45,7 +45,7 @@ export function healthCandidates(data: HealthData | undefined): Candidate[] {
   if (steps !== undefined && steps >= data.goals.steps) {
     candidates.push({
       id: 'health:steps-goal', source: 'health', kind: 'health', score: 63, shapes: ['secondary', 'tile'],
-      kicker: 'Goal reached', title: `${Math.round(steps).toLocaleString()} steps`,
+      kicker: 'Goal reached', title: `${Math.round(steps).toLocaleString('en-US')} steps`,
       detail: `${Math.round((steps / data.goals.steps) * 100)}% of your daily goal`, href: '#/health', render: { type: 'health-rings' },
     });
   }

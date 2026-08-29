@@ -11,13 +11,13 @@ import type {
   SpotifyData,
   SteamData,
   WeatherData,
-} from '@personal-dashboard/shared';
+} from '@nohm/shared';
 import { deg, glyph, HUMIDITY_COLOR, PRECIP_COLOR, UV_COLOR, weatherLocation, WIND_COLOR } from '../lib/weather';
 import { mapsCoordinatesHref, mapsSearchHref } from '../lib/maps';
 import { latestActivityDay } from '../lib/health';
 import { rampColor } from '../lib/contributions';
 import { formatEventDate } from '../lib/time';
-import { pathOfLegendsDisplayLeagueNumber } from '@personal-dashboard/shared';
+import { pathOfLegendsDisplayLeagueNumber } from '@nohm/shared';
 import { CLASH_ROYALE_APP_ICON_URL, CLASH_ROYALE_TROPHY_ICON_URL, clashRoyaleArenaArt, clashRoyaleLeagueArt } from '../lib/clashRoyale';
 import {
   CLASH_OF_CLANS_APP_ICON_URL,
@@ -33,6 +33,7 @@ import { ActivityRings, CompactActivityRings } from './ActivityRings';
 import { GitHubMark } from './GitHubMark';
 import { SteamMark } from './SteamMark';
 import { CalendarMark } from './CalendarMark';
+import { useI18n } from '../i18n/I18nProvider';
 import { MailMark } from './MailMark';
 import { NewsMark } from './NewsMark';
 import { MessageMark } from './MessageMark';
@@ -44,6 +45,7 @@ import { SonarWordmark } from './SonarWordmark';
 import { useRobloxArtPalette } from './command-center/useRobloxArtPalette';
 import { useCommandCenterData, type AiUsageByTool } from './command-center/useCommandCenterData';
 import '../sections/spotify/spotify.css';
+import { useVisibleSections } from '../sections/settings/preferences';
 
 const SECONDARY_CAROUSEL_INTERVAL_MS = 7_000;
 const SOON_MS = 6 * 60 * 60_000;
@@ -595,10 +597,12 @@ function SecondaryCarousel({
     unbounded. Clash Royale and Valorant remain available in the overview grid, but are
     intentionally omitted from this compact dashboard-level navigation. */
 function CommandNav() {
+  const { t } = useI18n();
+  const visibleSectionIds = useVisibleSections();
   return (
-    <nav className="command-nav" aria-label="Dashboard sections">
-      {SECTIONS.filter((section) => section.id !== 'clash-royale' && section.id !== 'valorant').map((section) => (
-        <a key={section.id} href={sectionHref(section.id)} aria-label={section.title} title={section.title} style={accentStyle(section)}>
+    <nav className="command-nav" aria-label={t('overview.sections')}>
+      {SECTIONS.filter((section) => visibleSectionIds.includes(section.id) && section.id !== 'clash-royale' && section.id !== 'valorant').map((section) => (
+        <a key={section.id} href={sectionHref(section.id)} aria-label={t(section.titleKey)} title={t(section.titleKey)} style={accentStyle(section)}>
           <SectionIcon id={section.id} monochrome />
         </a>
       ))}
@@ -607,10 +611,11 @@ function CommandNav() {
 }
 
 function CommandCenterSkeleton() {
+  const { t } = useI18n();
   return (
     <section className="command-center glass" aria-labelledby="command-center-title">
       <div className="command-center-head">
-        <div><p className="command-eyebrow">Overview</p><h2 id="command-center-title" className="command-title">What's next</h2></div>
+        <div><p className="command-eyebrow">{t('overview.commandEyebrow')}</p><h2 id="command-center-title" className="command-title">{t('overview.commandTitle')}</h2></div>
         <CommandNav />
       </div>
       <div className="command-layout animate-pulse">
@@ -653,11 +658,12 @@ export function HeroPanel({
   activity: HealthData | undefined;
   weather: WeatherData | undefined;
 }>) {
+  const { t } = useI18n();
   const today = weather?.days[0];
   return (
     <CommandPanel
       href={hero.href}
-      label={`Open ${hero.kicker}: ${event?.title ?? hero.title}`}
+      label={t('overview.openService', { name: event?.title ?? hero.title })}
       className={`command-primary command-panel--${toneFor(hero)}`}
       art={slotArt(hero)}
       style={weatherPanelStyle(hero)}
@@ -700,9 +706,9 @@ export function HeroPanel({
       )}
       <div className="command-weather-row">
         <div className="command-weather-target">
-          <a href={sectionHref('weather')} className="command-weather-summary" aria-label="Open weather">
+          <a href={sectionHref('weather')} className="command-weather-summary" aria-label={t('overview.openService', { name: t('section.weather.title') })}>
             <span className="text-2xl" aria-hidden>{weather ? glyph(weather.current.symbol) : '·'}</span>
-            <div className="min-w-0"><p className="text-lg font-semibold tabular-nums">{weather ? deg(weather.current.temperature) : 'Syncing'}</p><p className="truncate text-[11px] text-ink-muted">{today ? `${deg(today.minTemperature)}–${deg(today.maxTemperature)} · ${today.precipitationMm.toFixed(1)} mm rain` : 'Weather details are loading'}</p></div>
+            <div className="min-w-0"><p className="text-lg font-semibold tabular-nums">{weather ? deg(weather.current.temperature) : t('overview.syncing')}</p><p className="truncate text-[11px] text-ink-muted">{today ? `${deg(today.minTemperature)}–${deg(today.maxTemperature)} · ${t('overview.rain', { amount: today.precipitationMm.toFixed(1) })}` : t('overview.weatherLoading')}</p></div>
             {weather?.hours.slice(0, 4).map((hour) => <div key={hour.time} className="command-forecast"><span>{hour.hourLabel}</span><strong>{deg(hour.temperature)}</strong></div>)}
           </a>
           {weather && <a href={mapsCoordinatesHref(weather.location)} target="_blank" rel="noreferrer" className="command-weather-location"><span aria-hidden>📍</span>{weatherLocation(weather.location)}</a>}
@@ -771,14 +777,16 @@ export function SecondaryCardBody(props: Readonly<{
   hoveredDay: { date: string; count: number } | null;
   onHover: (day: { date: string; count: number } | null) => void;
 }>) {
+  const { t } = useI18n();
   const { slot } = props;
   return <>
-    {slot.render.type !== 'roblox-now-playing' && <div className="command-agenda-heading"><p className="command-label"><KickerLabel slot={slot} /></p><span className="command-agenda-link" aria-hidden>Open section <span>↗</span></span></div>}
+    {slot.render.type !== 'roblox-now-playing' && <div className="command-agenda-heading"><p className="command-label"><KickerLabel slot={slot} /></p><span className="command-agenda-link" aria-hidden>{t('overview.openSection')} <span>↗</span></span></div>}
     <SecondaryContent {...props} />
   </>;
 }
 
 export function DailyCommandCenter() {
+  const { t } = useI18n();
   const { commandCenter, calendar, weather, github, health, gmail, aiUsage, spotify, spotifyFetchedAt, steam, roblox } = useCommandCenterData();
   const [hoveredDay, setHoveredDay] = useState<{ date: string; count: number } | null>(null);
   const [activeSecondaryIndex, setActiveSecondaryIndex] = useState(0);
@@ -805,7 +813,7 @@ export function DailyCommandCenter() {
   return (
     <section className="command-center glass" aria-labelledby="command-center-title">
       <div className="command-center-head">
-        <div><p className="command-eyebrow">Overview</p><h2 id="command-center-title" className="command-title">What's next</h2></div>
+        <div><p className="command-eyebrow">{t('overview.commandEyebrow')}</p><h2 id="command-center-title" className="command-title">{t('overview.commandTitle')}</h2></div>
         <CommandNav />
       </div>
       <div className="command-layout">
@@ -814,7 +822,7 @@ export function DailyCommandCenter() {
       </div>
       {activeSecondary && <CommandPanel
         href={activeSecondary.href}
-        label={`Open ${activeSecondary.kicker}: ${activeSecondary.title}`}
+        label={t('overview.openService', { name: activeSecondary.title })}
         className={`command-agenda command-panel--${toneFor(activeSecondary)}${isRobloxSecondary ? ' command-agenda--roblox' : ''}`}
         fullCardLink
         style={secondaryPanelStyle}

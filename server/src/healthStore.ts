@@ -1,4 +1,4 @@
-import type { HealthDay, HealthIngest } from '@personal-dashboard/shared';
+import type { HealthDay, HealthIngest } from '@nohm/shared';
 import type { Database } from './db/client.js';
 
 interface HealthDayRow {

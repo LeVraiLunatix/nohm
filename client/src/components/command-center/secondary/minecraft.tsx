@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import type { CommandCenterSlot } from '@personal-dashboard/shared';
+import type { CommandCenterSlot } from '@nohm/shared';
 import { GameActivityText } from './gameActivity';
 
 export function MinecraftNowPlayingSecondary({ slot }: Readonly<{ slot: CommandCenterSlot }>): ReactNode {

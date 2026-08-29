@@ -1,4 +1,4 @@
-import type { CommandCenterSlot } from '@personal-dashboard/shared';
+import type { CommandCenterSlot } from '@nohm/shared';
 
 export type SlotShape = 'hero' | 'secondary' | 'tile';
 

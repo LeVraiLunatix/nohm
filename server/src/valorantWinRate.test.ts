@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { isValorantWinRateEligibleMode } from '@personal-dashboard/shared';
+import { isValorantWinRateEligibleMode } from '@nohm/shared';
 
 describe('Valorant win-rate mode eligibility', () => {
   it.each([
@@ -20,8 +20,10 @@ describe('Valorant win-rate mode eligibility', () => {
     expect(isValorantWinRateEligibleMode(mode)).toBe(true);
   });
 
-  it.each(['Custom Game', 'Range', 'Tutorial', 'Deathmatch', 'Unknown', 'ShootingRange'])
-    ('excludes utility or non-team mode %s', (mode) => {
+  it.each(['Custom Game', 'Range', 'Tutorial', 'Deathmatch', 'Unknown', 'ShootingRange'])(
+    'excludes utility or non-team mode %s',
+    (mode) => {
       expect(isValorantWinRateEligibleMode(mode)).toBe(false);
-    });
+    },
+  );
 });

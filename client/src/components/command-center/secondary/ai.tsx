@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import type { AiUsageToolData, CommandCenterSlot } from '@personal-dashboard/shared';
+import type { AiUsageToolData, CommandCenterSlot } from '@nohm/shared';
 import { UsageSparkline } from '../../../sections/ai/UsageHistoryChart';
 import { FIVE_HOUR_MS, WEEKLY_MS } from '../../../sections/ai/UsageMeter';
 import type { AiUsageByTool } from '../useCommandCenterData';

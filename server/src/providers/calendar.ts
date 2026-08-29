@@ -1,6 +1,6 @@
 import { createDAVClient } from 'tsdav';
 import ical from 'node-ical';
-import { calendarSchema, type CalendarData } from '@personal-dashboard/shared';
+import { calendarSchema, type CalendarData } from '@nohm/shared';
 import type { Provider } from '../scheduler.js';
 
 const MAX_EVENTS = 2000;

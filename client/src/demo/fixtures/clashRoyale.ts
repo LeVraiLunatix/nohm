@@ -1,5 +1,5 @@
-import type { ClashRoyaleData } from '@personal-dashboard/shared';
-import { isoDaysAgo, mulberry32 } from '@personal-dashboard/shared';
+import type { ClashRoyaleData } from '@nohm/shared';
+import { isoDaysAgo, mulberry32 } from '@nohm/shared';
 import { clashRoyaleCardArt, CLASH_ROYALE_DEMO_CLAN_BADGE_URL } from '../../lib/clashRoyale';
 
 // ── Clash Royale ─────────────────────────────────────────────────────────────────────────────

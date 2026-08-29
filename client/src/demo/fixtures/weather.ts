@@ -1,5 +1,5 @@
-import type { WeatherData } from '@personal-dashboard/shared';
-import { dateDaysAgo, daysFromNowAt } from '@personal-dashboard/shared';
+import type { WeatherData } from '@nohm/shared';
+import { dateDaysAgo, daysFromNowAt } from '@nohm/shared';
 
 // ── Weather ──────────────────────────────────────────────────────────────────────────────────
 

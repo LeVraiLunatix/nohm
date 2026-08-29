@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import type { CommandCenterSlot, RobloxData } from '@personal-dashboard/shared';
+import type { CommandCenterSlot, RobloxData } from '@nohm/shared';
 import { publicAsset } from '../../../lib/publicAsset';
 import { FallbackSecondary } from './fallback';
 

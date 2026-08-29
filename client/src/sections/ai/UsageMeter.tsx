@@ -1,7 +1,7 @@
 import { useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { motion } from 'motion/react';
-import type { AiUsageToolData } from '@personal-dashboard/shared';
+import type { AiUsageToolData } from '@nohm/shared';
 import { AnimatedNumber } from '../../components/AnimatedNumber';
 import { formatCompactNumber } from '../../lib/format';
 

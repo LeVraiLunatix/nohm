@@ -1,3 +1,5 @@
+import { useI18n } from '../../i18n/I18nProvider';
+
 interface UsageRefreshButtonProps {
   label: string;
   refreshing: boolean;
@@ -9,6 +11,7 @@ export function UsageRefreshButton({
   refreshing,
   onRefresh,
 }: Readonly<UsageRefreshButtonProps>) {
+  const { t } = useI18n();
   return (
     <button
       type="button"
@@ -21,9 +24,9 @@ export function UsageRefreshButton({
         void onRefresh();
       }}
       disabled={refreshing}
-      aria-label={`Refresh ${label} usage`}
+      aria-label={t('ai.refreshLabel', { name: label })}
     >
-      {refreshing ? 'Refreshing…' : 'Refresh'}
+      {refreshing ? t('ai.refreshing') : t('ai.refresh')}
     </button>
   );
 }

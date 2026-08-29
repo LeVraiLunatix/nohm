@@ -1,4 +1,4 @@
-import { spotifySchema, type SpotifyData } from '@personal-dashboard/shared';
+import { spotifySchema, type SpotifyData } from '@nohm/shared';
 import type { Database } from './db/client.js';
 
 /** Owner-only last-good Spotify data and rate-limit deadline, shared safely by all installations. */

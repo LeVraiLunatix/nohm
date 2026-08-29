@@ -1,5 +1,5 @@
 import { useId, useMemo, useState } from 'react';
-import type { WeatherData } from '@personal-dashboard/shared';
+import type { WeatherData } from '@nohm/shared';
 import { AnimatePresence, motion } from 'motion/react';
 import { deg, glyph, HUMIDITY_COLOR, PRECIP_COLOR, symbolLabel, TEMP_COLOR, uvLevel, UV_COLOR, WIND_COLOR } from '../../lib/weather';
 

@@ -1,4 +1,4 @@
-import type { HealthData, HealthDay } from '@personal-dashboard/shared';
+import type { HealthData, HealthDay } from '@nohm/shared';
 import { computeDeviation, type Deviation } from '../deviation.js';
 
 const baselineMetrics = [

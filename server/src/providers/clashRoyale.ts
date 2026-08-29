@@ -1,4 +1,4 @@
-import { clashRoyaleSchema, type ClashRoyaleBattle, type ClashRoyaleCard, type ClashRoyaleData } from '@personal-dashboard/shared';
+import { clashRoyaleSchema, type ClashRoyaleBattle, type ClashRoyaleCard, type ClashRoyaleData } from '@nohm/shared';
 import { md5Hex } from '../md5.js';
 import type { Provider } from '../scheduler.js';
 

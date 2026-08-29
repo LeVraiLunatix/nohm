@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import type { SteamData, SteamGame } from '@personal-dashboard/shared';
+import type { SteamData, SteamGame } from '@nohm/shared';
 
 export const accent = 'var(--color-accent-steam)';
 

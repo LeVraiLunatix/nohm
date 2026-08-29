@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { AiUsageToolData } from '@personal-dashboard/shared';
+import type { AiUsageToolData } from '@nohm/shared';
 import { aiCandidates } from './ai.js';
 
 describe('aiCandidates', () => {

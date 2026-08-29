@@ -1,4 +1,4 @@
-import type { CalendarData, GmailData, HueData, IMessageData, NewsData } from '@personal-dashboard/shared';
+import type { CalendarData, GmailData, HueData, IMessageData, NewsData } from '@nohm/shared';
 import { useWidget } from '../../useWidget';
 import { isWidgetDisabled, WidgetBody } from '../../components/WidgetCard';
 import { relativeTime, formatEventDate } from '../../lib/time';

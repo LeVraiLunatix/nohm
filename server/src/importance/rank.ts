@@ -1,4 +1,4 @@
-import type { CommandCenterData } from '@personal-dashboard/shared';
+import type { CommandCenterData } from '@nohm/shared';
 import type { Candidate, SlotShape } from './types.js';
 
 const SECONDARY_CAROUSEL_LIMIT = 3;

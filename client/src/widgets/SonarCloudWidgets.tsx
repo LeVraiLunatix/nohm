@@ -1,4 +1,4 @@
-import type { SonarProject, SonarRating } from '@personal-dashboard/shared';
+import type { SonarProject, SonarRating } from '@nohm/shared';
 
 const RATING_COLOR: Record<SonarRating, string> = {
   A: 'light-dark(#1c7a3d, #4ade80)',

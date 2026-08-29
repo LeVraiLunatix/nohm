@@ -1,4 +1,4 @@
-import type { SteamData } from '@personal-dashboard/shared';
+import type { SteamData } from '@nohm/shared';
 
 import type { Candidate, SteamMoments } from '../types.js';
 import { allShapes } from './shapes.js';

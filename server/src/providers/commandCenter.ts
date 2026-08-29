@@ -22,7 +22,7 @@ import {
   type TransitData,
   type WeatherData,
   type WidgetEnvelope,
-} from '@personal-dashboard/shared';
+} from '@nohm/shared';
 import type { AppConfig } from '../config.js';
 import { rankCandidates } from '../importance/rank.js';
 import {

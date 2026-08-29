@@ -1,7 +1,7 @@
 const GEOCODER_URL = 'https://api.entur.io/geocoder/v1/reverse';
 
 // Identify ourselves as Entur's API terms require (ET-Client-Name: <owner>-<application>).
-export const ENTUR_CLIENT_NAME = 'joachimvn-personal-dashboard';
+export const ENTUR_CLIENT_NAME = 'joachimvn-nohm';
 
 /** Raw reverse-geocode response — callers apply their own zod schema to the parts they need. */
 export async function enturReverseGeocode(

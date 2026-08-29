@@ -1,5 +1,5 @@
 import { Octokit } from 'octokit';
-import { githubSchema, type GitHubData } from '@personal-dashboard/shared';
+import { githubSchema, type GitHubData } from '@nohm/shared';
 import type { GitHubSnapshotStore } from '../githubSnapshot.js';
 import type { Provider } from '../scheduler.js';
 

@@ -1,5 +1,5 @@
-import type { RobloxData } from '@personal-dashboard/shared';
-import { iso } from '@personal-dashboard/shared';
+import type { RobloxData } from '@nohm/shared';
+import { iso } from '@nohm/shared';
 
 // ── Roblox ───────────────────────────────────────────────────────────────────────────────────
 

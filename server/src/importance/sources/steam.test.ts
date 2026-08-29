@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { SteamData } from '@personal-dashboard/shared';
+import type { SteamData } from '@nohm/shared';
 import { steamCandidates } from './steam.js';
 
 describe('steamCandidates', () => {

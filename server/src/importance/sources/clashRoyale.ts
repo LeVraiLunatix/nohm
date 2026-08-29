@@ -1,5 +1,5 @@
-import type { ClashRoyaleBattle, ClashRoyaleData } from '@personal-dashboard/shared';
-import { pathOfLegendsDisplayLeagueNumber, pathOfLegendsLeagueName } from '@personal-dashboard/shared';
+import type { ClashRoyaleBattle, ClashRoyaleData } from '@nohm/shared';
+import { pathOfLegendsDisplayLeagueNumber, pathOfLegendsLeagueName } from '@nohm/shared';
 
 import type { Candidate, ClashRoyaleMoments } from '../types.js';
 import { allShapes } from './shapes.js';
@@ -18,7 +18,7 @@ function clashRoyaleArenaCandidate(moments: ClashRoyaleMoments, data: ClashRoyal
   return {
     id: `clash-royale:arena:${moments.newArena}`, source: 'clash-royale', kind: 'clash-royale', score: 88, shapes: [...allShapes],
     kicker: 'New arena', title: moments.newArena,
-    detail: `${data.profile.trophies.toLocaleString()} trophies`,
+    detail: `${data.profile.trophies.toLocaleString('en-US')} trophies`,
     href: '#/clash-royale', render: { type: 'clash-royale-moment', kind: 'arena', arenaName: moments.newArena },
   };
 }
@@ -28,7 +28,7 @@ function clashRoyaleLeagueCandidate(moments: ClashRoyaleMoments): Candidate | un
   return {
     id: `clash-royale:league:${moments.newLeague.leagueNumber}`, source: 'clash-royale', kind: 'clash-royale', score: 85, shapes: [...allShapes],
     kicker: 'Path of Legends', title: `League ${pathOfLegendsDisplayLeagueNumber(moments.newLeague.leagueNumber)}`,
-    detail: `${moments.newLeague.trophies.toLocaleString()} Path of Legends trophies`,
+    detail: `${moments.newLeague.trophies.toLocaleString('en-US')} Path of Legends trophies`,
     href: '#/clash-royale', render: { type: 'clash-royale-moment', kind: 'league', leagueNumber: moments.newLeague.leagueNumber },
   };
 }
@@ -37,7 +37,7 @@ function clashRoyaleBestTrophiesCandidate(moments: ClashRoyaleMoments): Candidat
   if (moments.newBestTrophies === undefined) return undefined;
   return {
     id: `clash-royale:best-trophies:${moments.newBestTrophies}`, source: 'clash-royale', kind: 'clash-royale', score: 80, shapes: [...allShapes],
-    kicker: 'New personal best', title: `${moments.newBestTrophies.toLocaleString()} trophies`,
+    kicker: 'New personal best', title: `${moments.newBestTrophies.toLocaleString('en-US')} trophies`,
     detail: 'Your highest trophy count yet', href: '#/clash-royale',
     render: { type: 'clash-royale-moment', kind: 'best-trophies', bestTrophies: moments.newBestTrophies },
   };
@@ -58,7 +58,7 @@ function clashRoyaleWinStreakCandidate(data: ClashRoyaleData, winStreakMin: numb
   // meaningless noise — the league (its trophy-equivalent standing) is the stable, legible number.
   const detail = latest.type === 'pathOfLegend' && data.profile.pathOfLegends
     ? `Currently ${pathOfLegendsLeagueName(data.profile.pathOfLegends.leagueNumber)}`
-    : `Currently ${data.profile.trophies.toLocaleString()} trophies`;
+    : `Currently ${data.profile.trophies.toLocaleString('en-US')} trophies`;
   // A short streak is common enough that it doesn't earn a whole secondary-carousel slide —
   // only a truly long run gets the richer secondary treatment; anything shorter is tile-only.
   const shapes: Candidate['shapes'] = streak > 10 ? [...allShapes] : ['tile'];

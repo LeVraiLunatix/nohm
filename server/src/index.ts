@@ -1,6 +1,8 @@
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { randomBytes } from 'node:crypto';
 import express from 'express';
+import { google } from 'googleapis';
 import { z } from 'zod';
 import { parseHealthIngestBody } from './healthIngest.js';
 import {
@@ -23,6 +25,15 @@ import { createIssue, issueErrorCode, parseIssueInput } from './issues.js';
 import { availableProjects, codeActionError, launchCodeAction } from './codeSession.js';
 import { createOwnedReposCache, listOwnedRepos } from './providers/github.js';
 import { todayInZone } from './providers/health.js';
+import { sendCiderCommand, type CiderCommand } from './providers/cider.js';
+import {
+  ServiceSettingsStore,
+  applyServiceSettingsToEnvironment,
+  isConfigurableServiceId,
+  serviceSettingsSchemas,
+} from './serviceSettings.js';
+import { writeSpotifyToken } from './spotifyToken.js';
+import { writeGmailToken } from './gmailToken.js';
 
 // A transient network blip (e.g. a Postgres socket erroring outside any awaited query, as seen
 // with Railway's TCP proxy) otherwise crashes the whole process — Node treats an unhandled
@@ -37,9 +48,17 @@ process.on('uncaughtException', (error) => {
   console.error('[server] uncaught exception:', error);
 });
 
+const serviceSettingsStore = new ServiceSettingsStore(
+  path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../.data/service-settings.json'),
+);
+const storedServiceSettings = await serviceSettingsStore.load();
+applyServiceSettingsToEnvironment(storedServiceSettings);
 const env = loadEnv();
 const config = loadConfig();
 const database = createDatabase(env.databaseUrl);
+if (database.mode === 'memory') {
+  console.info('[storage] mode local sans persistance : configurez DATABASE_URL pour conserver et synchroniser les historiques.');
+}
 await migrateDatabase(database);
 const app = express();
 app.disable('x-powered-by');
@@ -94,6 +113,101 @@ const AI_USAGE_WIDGET_IDS = new Set(['ai-usage-claude', 'ai-usage-codex']);
 
 app.get('/api/health', (_req, res) => {
   res.json({ ok: true });
+});
+
+function configuredServiceIds(): string[] {
+  const ids = new Set<string>(serviceSettingsStore.configuredIds());
+  if (env.weather) ids.add('weather');
+  if (env.icloud) ids.add('calendar');
+  if (env.google) ids.add('gmail');
+  if (env.github) ids.add('github');
+  if (env.steam) ids.add('steam');
+  if (env.cider) ids.add('cider');
+  if (env.spotify) ids.add('spotify');
+  if (env.lastfm) ids.add('lastfm');
+  if (env.valorant) ids.add('valorant');
+  if (env.clashRoyale) ids.add('clashRoyale');
+  if (env.clashOfClans) ids.add('clashOfClans');
+  if (env.roblox) ids.add('roblox');
+  return [...ids];
+}
+
+app.get('/api/settings/services', (_req, res) => {
+  res.json({ configured: configuredServiceIds(), oauthReady: [env.google ? 'gmail' : null, env.spotify ? 'spotify' : null].filter(Boolean) });
+});
+
+const oauthStates = new Map<string, { service: 'gmail' | 'spotify'; expiresAt: number }>();
+const oauthRedirect = (service: 'gmail' | 'spotify') => `http://127.0.0.1:${env.port}/api/settings/oauth/${service}/callback`;
+const oauthResultPage = (title: string, detail: string) => `<!doctype html><html lang="fr"><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>${title}</title><style>body{margin:0;min-height:100vh;display:grid;place-items:center;background:#090a10;color:#f6f5fb;font:16px system-ui}.card{max-width:34rem;margin:1rem;padding:2rem;border:1px solid #292b38;border-radius:24px;background:#12131c;box-shadow:0 24px 80px #0008}h1{margin:0 0 .6rem;font-size:1.6rem}p{color:#aaaebe;line-height:1.5}button{border:0;border-radius:12px;padding:.7rem 1rem;background:#736bff;color:white;font-weight:700;cursor:pointer}</style><main class="card"><h1>${title}</h1><p>${detail}</p><button onclick="window.close()">Fermer cet onglet</button></main></html>`;
+
+app.get('/api/settings/oauth/spotify/start', (_req, res) => {
+  if (!env.spotify) { res.status(409).send(oauthResultPage('Spotify n’est pas prêt', 'Enregistrez d’abord l’ID client et le secret, puis redémarrez Nohm.')); return; }
+  const state = randomBytes(24).toString('base64url');
+  oauthStates.set(state, { service: 'spotify', expiresAt: Date.now() + 10 * 60_000 });
+  const url = new URL('https://accounts.spotify.com/authorize');
+  url.searchParams.set('response_type', 'code');
+  url.searchParams.set('client_id', env.spotify.clientId);
+  url.searchParams.set('scope', 'user-read-currently-playing user-read-recently-played user-top-read');
+  url.searchParams.set('redirect_uri', oauthRedirect('spotify'));
+  url.searchParams.set('state', state);
+  res.redirect(url.toString());
+});
+
+app.get('/api/settings/oauth/spotify/callback', async (req, res) => {
+  const state = typeof req.query.state === 'string' ? req.query.state : '';
+  const entry = oauthStates.get(state);
+  oauthStates.delete(state);
+  const code = typeof req.query.code === 'string' ? req.query.code : '';
+  if (!env.spotify || !entry || entry.service !== 'spotify' || entry.expiresAt < Date.now() || !code) { res.status(400).send(oauthResultPage('Connexion refusée', 'La demande Spotify a expiré ou a été annulée.')); return; }
+  try {
+    const response = await fetch('https://accounts.spotify.com/api/token', { method: 'POST', headers: { 'content-type': 'application/x-www-form-urlencoded', authorization: `Basic ${Buffer.from(`${env.spotify.clientId}:${env.spotify.clientSecret}`).toString('base64')}` }, body: new URLSearchParams({ grant_type: 'authorization_code', code, redirect_uri: oauthRedirect('spotify') }) });
+    const token = await response.json() as { access_token?: string; refresh_token?: string; expires_in?: number };
+    if (!response.ok || !token.access_token || !token.refresh_token || !token.expires_in) throw new Error('token exchange failed');
+    writeSpotifyToken({ access_token: token.access_token, refresh_token: token.refresh_token, expires_at: Date.now() + token.expires_in * 1000 });
+    res.send(oauthResultPage('Spotify est connecté', 'Vous pouvez fermer cet onglet puis actualiser Nohm.'));
+  } catch { res.status(502).send(oauthResultPage('Connexion impossible', 'Spotify n’a pas accepté la connexion. Vérifiez l’URI de redirection dans votre application Spotify.')); }
+});
+
+app.get('/api/settings/oauth/gmail/start', (_req, res) => {
+  if (!env.google) { res.status(409).send(oauthResultPage('Gmail n’est pas prêt', 'Enregistrez d’abord l’ID client et le secret, puis redémarrez Nohm.')); return; }
+  const state = randomBytes(24).toString('base64url');
+  oauthStates.set(state, { service: 'gmail', expiresAt: Date.now() + 10 * 60_000 });
+  const auth = new google.auth.OAuth2(env.google.clientId, env.google.clientSecret, oauthRedirect('gmail'));
+  res.redirect(auth.generateAuthUrl({ access_type: 'offline', prompt: 'consent', state, scope: ['https://www.googleapis.com/auth/gmail.metadata'] }));
+});
+
+app.get('/api/settings/oauth/gmail/callback', async (req, res) => {
+  const state = typeof req.query.state === 'string' ? req.query.state : '';
+  const entry = oauthStates.get(state);
+  oauthStates.delete(state);
+  const code = typeof req.query.code === 'string' ? req.query.code : '';
+  if (!env.google || !entry || entry.service !== 'gmail' || entry.expiresAt < Date.now() || !code) { res.status(400).send(oauthResultPage('Connexion refusée', 'La demande Google a expiré ou a été annulée.')); return; }
+  try {
+    const auth = new google.auth.OAuth2(env.google.clientId, env.google.clientSecret, oauthRedirect('gmail'));
+    const { tokens } = await auth.getToken(code);
+    if (!tokens.refresh_token) throw new Error('missing refresh token');
+    writeGmailToken(tokens);
+    res.send(oauthResultPage('Gmail est connecté', 'Vous pouvez fermer cet onglet puis actualiser Nohm.'));
+  } catch { res.status(502).send(oauthResultPage('Connexion impossible', 'Google n’a pas accepté la connexion. Vérifiez votre client OAuth et son URI de redirection.')); }
+});
+
+app.put('/api/settings/services/:serviceId', async (req, res) => {
+  const { serviceId } = req.params;
+  if (!isConfigurableServiceId(serviceId)) {
+    res.status(404).json({ error: 'unknown-service' });
+    return;
+  }
+  const parsed = serviceSettingsSchemas[serviceId].safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: 'invalid-service-settings' });
+    return;
+  }
+  try {
+    await serviceSettingsStore.set(serviceId, parsed.data as Record<string, string>);
+    res.json({ ok: true, configured: true, restartRequired: true });
+  } catch {
+    res.status(500).json({ error: 'settings-save-failed' });
+  }
 });
 
 // Pushes "widget X settled" to open dashboards so they read it now instead of on their next poll.
@@ -218,6 +332,33 @@ app.put('/api/layout/:sectionId', (req, res) => {
 
 app.get('/api/widgets', (_req, res) => {
   res.json({ widgets: scheduler.list() });
+});
+
+const gameModeSchema = z.object({ active: z.boolean() });
+app.post('/api/game-mode', (req, res) => {
+  const parsed = gameModeSchema.safeParse(req.body);
+  if (!parsed.success) { res.status(400).json({ error: 'invalid-game-mode' }); return; }
+  scheduler.setGameMode(parsed.data.active);
+  res.json({ active: parsed.data.active });
+});
+
+const ciderCommandSchema = z.discriminatedUnion('command', [
+  z.object({ command: z.enum(['play', 'pause', 'previous', 'next', 'toggle-shuffle', 'toggle-repeat']) }),
+  z.object({ command: z.literal('seek'), value: z.number().min(0) }),
+  z.object({ command: z.literal('volume'), value: z.number().min(0).max(1) }),
+]);
+
+app.post('/api/music/cider/command', async (req, res) => {
+  const parsed = ciderCommandSchema.safeParse(req.body);
+  if (!parsed.success) { res.status(400).json({ error: 'invalid-music-command' }); return; }
+  if (!env.cider) { res.status(409).json({ error: 'cider-not-configured' }); return; }
+  try {
+    await sendCiderCommand(env.cider, parsed.data.command as CiderCommand, 'value' in parsed.data ? parsed.data.value : undefined);
+    await scheduler.refresh('music-cider', true);
+    res.json(scheduler.getEnvelope('music-cider'));
+  } catch {
+    res.status(502).json({ error: 'cider-control-failed' });
+  }
 });
 
 app.get('/api/widgets/:id', (req, res) => {

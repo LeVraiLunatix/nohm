@@ -6,8 +6,8 @@ export interface ServerEnv {
   host: string;
   timezone: string;
   isProduction: boolean;
-  /** Required: all persistent dashboard state is shared through Railway Postgres. */
-  databaseUrl: string;
+  /** Optional: enables persistent cross-machine history through PostgreSQL. */
+  databaseUrl?: string;
   weather?: { lat: number; lon: number };
   github?: { token: string; username: string };
   githubIssuesToken?: string;
@@ -15,6 +15,8 @@ export interface ServerEnv {
   calendarIcsFeeds: { name: string; url: string }[];
   google?: { clientId: string; clientSecret: string };
   spotify?: { clientId: string; clientSecret: string };
+  cider?: { baseUrl: string; token?: string };
+  lastfm?: { apiKey: string; user: string };
   hue?: { clientId: string; clientSecret: string };
   steam?: { apiKey: string; steamId: string };
   clashRoyale?: { apiKey: string; playerTag: string };
@@ -119,6 +121,31 @@ export function parseDashboardPush(): ServerEnv['dashboardPush'] {
   return { url, secret };
 }
 
+export function parseCider(): ServerEnv['cider'] {
+  const token = process.env.CIDER_RPC_TOKEN || undefined;
+  const unauthenticated = process.env.CIDER_RPC_UNAUTHENTICATED === '1';
+  if (!token && !unauthenticated) return undefined;
+  const raw = process.env.CIDER_RPC_URL ?? 'http://127.0.0.1:10767';
+  try {
+    const url = new URL(raw);
+    if (url.protocol !== 'http:' || !['127.0.0.1', 'localhost', '[::1]'].includes(url.hostname)) {
+      console.warn('⚠️  CIDER_RPC_URL must be an HTTP loopback URL — Cider disabled.');
+      return undefined;
+    }
+    return { baseUrl: url.origin, token };
+  } catch {
+    console.warn('⚠️  CIDER_RPC_URL is invalid — Cider disabled.');
+    return undefined;
+  }
+}
+
+export function parseLastFm(): ServerEnv['lastfm'] {
+  const apiKey = process.env.LASTFM_API_KEY?.trim();
+  const user = process.env.LASTFM_USER?.trim();
+  if (!apiKey || !user) return undefined;
+  return { apiKey, user };
+}
+
 /** Matches Batabiboing's derived token so a feed URL cannot authenticate its push endpoint. */
 export function batabiboingCalendarFeed(
   pushUrl: string,
@@ -141,11 +168,6 @@ export function batabiboingCalendarFeed(
 
 export function loadEnv(): ServerEnv {
   const databaseUrl = process.env.DATABASE_URL;
-  if (!databaseUrl) {
-    throw new Error(
-      'DATABASE_URL is required. Add the Railway Postgres connection URL to server/.env before starting the dashboard.',
-    );
-  }
   const host = process.env.HOST ?? '127.0.0.1';
   const dashboardPush = parseDashboardPush();
   if (host !== '127.0.0.1' && host !== 'localhost') {
@@ -193,6 +215,8 @@ export function loadEnv(): ServerEnv {
             clientSecret: process.env.SPOTIFY_CLIENT_SECRET,
           }
         : undefined,
+    cider: parseCider(),
+    lastfm: parseLastFm(),
     hue:
       process.env.HUE_CLIENT_ID && process.env.HUE_CLIENT_SECRET
         ? { clientId: process.env.HUE_CLIENT_ID, clientSecret: process.env.HUE_CLIENT_SECRET }

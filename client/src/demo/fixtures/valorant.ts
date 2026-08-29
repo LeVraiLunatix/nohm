@@ -1,5 +1,5 @@
-import type { ValorantData } from '@personal-dashboard/shared';
-import { iso, isoDaysAgo, mulberry32 } from '@personal-dashboard/shared';
+import type { ValorantData } from '@nohm/shared';
+import { iso, isoDaysAgo, mulberry32 } from '@nohm/shared';
 import { valorantAgentIconUrl, valorantTierIconUrl, VALORANT_DEMO_CARD_WIDE_ART, VALORANT_DEMO_CARD_LARGE_ART } from '../../lib/valorant';
 
 // ── Valorant ─────────────────────────────────────────────────────────────────────────────────

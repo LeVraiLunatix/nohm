@@ -1,4 +1,4 @@
-import type { SpotifyData } from '@personal-dashboard/shared';
+import type { SpotifyData } from '@nohm/shared';
 import {
   buildSpotifyRotation,
   ARTIST_NAMES,
@@ -6,7 +6,7 @@ import {
   MANUAL_ARTIST_IMAGES,
   ONE_OFFS,
   TRACKS,
-} from '@personal-dashboard/shared';
+} from '@nohm/shared';
 import { fallbackArt } from './shared';
 
 // ── Spotify — broadly-recognizable artists/tracks, real cover-art/photo CDN links where known ─

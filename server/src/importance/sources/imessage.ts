@@ -1,4 +1,4 @@
-import type { IMessageData } from '@personal-dashboard/shared';
+import type { IMessageData } from '@nohm/shared';
 
 import type { Candidate } from '../types.js';
 import { allShapes } from './shapes.js';

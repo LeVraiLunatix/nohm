@@ -3,7 +3,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { z } from 'zod';
 import { spawn as spawnPty } from 'node-pty';
-import { aiUsageToolSchema, type AiUsageToolData, type UsageHistoryPoint } from '@personal-dashboard/shared';
+import { aiUsageToolSchema, type AiUsageToolData, type UsageHistoryPoint } from '@nohm/shared';
 import type { Provider } from '../../scheduler.js';
 import type { UsageHistoryStore } from '../../usageHistory.js';
 import {

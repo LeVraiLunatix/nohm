@@ -1,5 +1,5 @@
-import type { HueData, PowerData, SystemData, TransitData } from '@personal-dashboard/shared';
-import { hhmm, mulberry32 } from '@personal-dashboard/shared';
+import type { HueData, PowerData, SystemData, TransitData } from '@nohm/shared';
+import { hhmm, mulberry32 } from '@nohm/shared';
 
 // ── Hue ──────────────────────────────────────────────────────────────────────────────────────
 

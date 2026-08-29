@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import type { SpotifyData } from '@personal-dashboard/shared';
+import type { SpotifyData } from '@nohm/shared';
 import { createSpotifyProvider, toPlayedTrackInput } from './spotify.js';
 
 vi.mock('../spotifyToken.js', () => ({

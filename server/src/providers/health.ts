@@ -1,4 +1,4 @@
-import { healthSchema, type HealthData } from '@personal-dashboard/shared';
+import { healthSchema, type HealthData } from '@nohm/shared';
 import type { HealthStore } from '../healthStore.js';
 import type { Provider } from '../scheduler.js';
 import { withHealthBaseline } from '../health/baseline.js';

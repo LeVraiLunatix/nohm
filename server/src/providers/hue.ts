@@ -5,7 +5,7 @@ import {
   type HueLight,
   type HueRoom,
   type HueScene,
-} from '@personal-dashboard/shared';
+} from '@nohm/shared';
 import { readHueToken, writeHueToken, type HueToken } from '../hueToken.js';
 import type { Provider } from '../scheduler.js';
 

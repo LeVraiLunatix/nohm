@@ -1,4 +1,4 @@
-import type { SteamData } from '@personal-dashboard/shared';
+import type { SteamData } from '@nohm/shared';
 import { relativeTime } from '../../lib/time';
 import { accent, findTrackedGame, useArtFallback } from './shared';
 

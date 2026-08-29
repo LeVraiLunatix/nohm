@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import type { ClashRoyaleData, SonarCloudData, SpotifyData, SteamData } from '@personal-dashboard/shared';
+import type { ClashRoyaleData, SonarCloudData, SpotifyData, SteamData } from '@nohm/shared';
 import { computeClashRoyaleMoments, computeSonarMoments, computeSpotifyFreshness, computeSteamMoments, withFallback } from './commandCenter.js';
 import type { SignalHistoryStore } from '../signalHistory.js';
 

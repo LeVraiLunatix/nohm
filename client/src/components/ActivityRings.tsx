@@ -1,7 +1,7 @@
 import { animate, motion, useInView, useMotionValue, useReducedMotion, useTransform } from 'motion/react';
 import { useEffect, useId, useRef } from 'react';
 import type { MotionValue } from 'motion/react';
-import type { HealthData } from '@personal-dashboard/shared';
+import type { HealthData } from '@nohm/shared';
 
 interface ActivityRingsProps {
   activeEnergyKcal: number;

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import type { TransitData, TransitDeparture, TransitStop } from '@personal-dashboard/shared';
+import type { TransitData, TransitDeparture, TransitStop } from '@nohm/shared';
 import { useWidget } from '../useWidget';
 import { WidgetCard } from '../components/WidgetCard';
 

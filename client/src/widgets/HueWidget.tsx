@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import type { HueData, HueLight, HueRoom, HueScene, WidgetEnvelope } from '@personal-dashboard/shared';
+import type { HueData, HueLight, HueRoom, HueScene, WidgetEnvelope } from '@nohm/shared';
 import { useWidget } from '../useWidget';
 import { WidgetCard } from '../components/WidgetCard';
 

@@ -1,4 +1,4 @@
-import type { GitHubData, SonarCloudData } from '@personal-dashboard/shared';
+import type { GitHubData, SonarCloudData } from '@nohm/shared';
 import { AnimatedNumber } from '../../components/AnimatedNumber';
 import { WidgetBody } from '../../components/WidgetCard';
 import { useWidget } from '../../useWidget';

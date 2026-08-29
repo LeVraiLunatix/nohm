@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
-import type { WidgetEnvelope } from '@personal-dashboard/shared';
+import type { WidgetEnvelope } from '@nohm/shared';
 import { relativeTime } from '../lib/time';
+import { useI18n } from '../i18n/I18nProvider';
 
 interface WidgetCardProps<T> {
   readonly title: string;
@@ -28,10 +29,11 @@ export function isWidgetDisabled(envelope: WidgetEnvelope<unknown> | null): bool
 
 /** Amber "updated Xm ago" pill shown while a widget serves cached data after a failed refresh. */
 export function StaleBadge({ envelope }: Readonly<{ envelope: WidgetEnvelope<unknown> | null }>) {
+  const { t } = useI18n();
   if (envelope?.status !== 'stale' || !envelope.fetchedAt) return null;
   return (
     <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs text-amber-700 dark:bg-amber-900/50 dark:text-amber-300">
-      updated {relativeTime(envelope.fetchedAt)}
+      {t('widget.stale', { time: relativeTime(envelope.fetchedAt) })}
     </span>
   );
 }
@@ -69,8 +71,9 @@ export function WidgetBody<T>({
   children,
   errorFallback,
 }: Omit<WidgetCardProps<T>, 'title'>) {
+  const { t } = useI18n();
   if (offline && !envelope) {
-    return <p className="text-sm text-rose-500">Can’t reach the dashboard server.</p>;
+    return <p className="text-sm text-rose-500">{t('widget.offline')}</p>;
   }
   if (!envelope || envelope.status === 'loading') {
     return (
@@ -83,14 +86,14 @@ export function WidgetBody<T>({
   if (envelope.status === 'disabled') {
     return (
       <p className="text-sm text-ink-faint">
-        Not configured — see the README to set this widget up.
+        {t('widget.disabled')}
       </p>
     );
   }
   if (envelope.status === 'error' || envelope.data === undefined) {
     const fallback = errorFallback?.(envelope);
     if (fallback) return fallback;
-    return <p className="text-sm text-rose-500">Couldn’t load ({envelope.error ?? 'unknown'}).</p>;
+    return <p className="text-sm text-rose-500">{t('widget.error', { error: envelope.error ?? 'unknown' })}</p>;
   }
   return <>{children(envelope.data)}</>;
 }

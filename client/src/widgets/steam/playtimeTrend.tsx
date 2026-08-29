@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import type { SteamData } from '@personal-dashboard/shared';
+import type { SteamData } from '@nohm/shared';
 import { accent } from './shared';
 
 const PLAYTIME_TREND_WINDOW_DAYS = 30;

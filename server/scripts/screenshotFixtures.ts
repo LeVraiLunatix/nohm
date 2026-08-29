@@ -14,7 +14,7 @@ import type {
   SpotifyData,
   SteamData,
   WeatherData,
-} from '@personal-dashboard/shared';
+} from '@nohm/shared';
 import {
   buildSpotifyRotation,
   daysFromNowAt,
@@ -29,7 +29,7 @@ import {
   ARTIST_NAMES,
   TRACKS,
   ONE_OFFS,
-} from '@personal-dashboard/shared';
+} from '@nohm/shared';
 
 // ── Real art lookups ─────────────────────────────────────────────────────────────────────────
 
@@ -37,7 +37,7 @@ const artCache = new Map<string, Promise<string | undefined>>();
 const fallbackArt = (seed: string) => `https://picsum.photos/seed/${seed}/300/300`;
 
 async function fetchJson(url: string): Promise<any> {
-  const res = await fetch(url, { headers: { 'user-agent': 'personal-dashboard-screenshot-script' } });
+  const res = await fetch(url, { headers: { 'user-agent': 'nohm-screenshot-script' } });
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   return res.json();
 }
@@ -321,7 +321,7 @@ export function githubFixture(now: Date): GitHubData {
   return {
     activity: [
       {
-        id: 'ev1', summary: '3 commits', repo: 'yourname/personal-dashboard', timestamp: iso(now, -2), branch: 'dev',
+        id: 'ev1', summary: '3 commits', repo: 'yourname/nohm', timestamp: iso(now, -2), branch: 'dev',
         commits: [
           { sha: 'a1b2c3d', title: 'Add importance scoring to the command center' },
           { sha: 'b2c3d4e', title: 'Wire health baseline into the scoring engine' },
@@ -331,15 +331,15 @@ export function githubFixture(now: Date): GitHubData {
       { id: 'ev2', summary: '1 commit', repo: 'yourname/weekend-project', timestamp: iso(now, -26), branch: 'main', commits: [{ sha: 'd4e5f6a', title: 'Prototype the offline sync queue' }] },
     ],
     pullRequests: [
-      { title: 'Add importance scoring to the command center', repo: 'yourname/personal-dashboard', number: 42, url: '#', role: 'author', draft: false, updatedAt: iso(now, -2) },
-      { title: 'Bump Vite to 7.x', repo: 'yourname/personal-dashboard', number: 40, url: '#', role: 'review-requested', draft: false, updatedAt: iso(now, -20) },
+      { title: 'Add importance scoring to the command center', repo: 'yourname/nohm', number: 42, url: '#', role: 'author', draft: false, updatedAt: iso(now, -2) },
+      { title: 'Bump Vite to 7.x', repo: 'yourname/nohm', number: 40, url: '#', role: 'review-requested', draft: false, updatedAt: iso(now, -20) },
     ],
     issues: [
-      { title: 'Contribution grid should scroll on narrow viewports', repo: 'yourname/personal-dashboard', number: 38, url: '#', updatedAt: iso(now, -40) },
+      { title: 'Contribution grid should scroll on narrow viewports', repo: 'yourname/nohm', number: 38, url: '#', updatedAt: iso(now, -40) },
     ],
     contributions: { total: githubDays.reduce((sum, day) => sum + day.count, 0), days: githubDays },
     repoHealth: [
-      { fullName: 'yourname/personal-dashboard', stars: 12, ciStatus: 'success', ciUrl: '#', latestRelease: 'v1.4.0', url: '#', lastPushedAt: iso(now, -3) },
+      { fullName: 'yourname/nohm', stars: 12, ciStatus: 'success', ciUrl: '#', latestRelease: 'v1.4.0', url: '#', lastPushedAt: iso(now, -3) },
       { fullName: 'yourname/weekend-project', stars: 3, ciStatus: 'running', ciUrl: '#', url: '#', lastPushedAt: iso(now, -26) },
       { fullName: 'yourname/dotfiles', stars: 41, ciStatus: 'none', url: '#', lastPushedAt: iso(now, -14 * 24) },
     ],

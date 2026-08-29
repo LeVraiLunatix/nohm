@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import type { CalendarData } from '@personal-dashboard/shared';
+import type { CalendarData } from '@nohm/shared';
 import { useWidget } from '../useWidget';
 import { WidgetCard } from '../components/WidgetCard';
 import { mapsSearchHref } from '../lib/maps';

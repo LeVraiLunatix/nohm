@@ -1,4 +1,4 @@
-import { useEffect, useState, type CSSProperties, type Dispatch, type SetStateAction } from 'react';
+import { lazy, Suspense, useEffect, useState, type CSSProperties, type Dispatch, type SetStateAction } from 'react';
 import { AnimatePresence, LayoutGroup, MotionConfig, motion } from 'motion/react';
 import { useHashRoute } from './router';
 import { useDeviceLocation } from './useDeviceLocation';
@@ -9,8 +9,17 @@ import { SectionView } from './sections/SectionView';
 import { PAGE_EXIT, SECTION_GLOW_ENTER, SECTION_GLOW_EXIT, UI_SPRING } from './sections/transitions';
 import { SystemFooter } from './components/SystemFooter';
 import { DailyCommandCenter } from './components/DailyCommandCenter';
-import { SlotGallery } from './components/command-center/SlotGallery';
+
+// Dev-only (`?dev=gallery`) and drags the synthetic demo fixtures in with it — kept out of the
+// production entry chunk and loaded only when that query param is present.
+const SlotGallery = lazy(() =>
+  import('./components/command-center/SlotGallery').then((m) => ({ default: m.SlotGallery })),
+);
 import { ThemeToggle } from './components/ThemeToggle';
+import { useI18n } from './i18n/I18nProvider';
+import { needsSetup, SetupWizard } from './sections/settings/SetupWizard';
+import { GameModeButton } from './gameMode/GameModeButton';
+import { useVisibleSections } from './sections/settings/preferences';
 
 /**
  * Dev tools reachable at runtime via `?dev=sky` (tune the continuous sky colors) or `?dev=gallery`
@@ -168,23 +177,19 @@ function useCurrentTime() {
   return now;
 }
 
-function greetingFor(hour: number): string {
-  if (hour < 6 || hour >= 22) return 'Good night.';
-  if (hour < 12) return 'Good morning.';
-  if (hour < 18) return 'Good afternoon.';
-  return 'Good evening.';
-}
-
 function Overview({ now }: Readonly<{ now: Date }>) {
-  const greeting = greetingFor(now.getHours());
+  const { t, date, locale } = useI18n();
+  const hour = now.getHours();
+  const greeting = t(hour < 6 || hour >= 22 ? 'greeting.night' : hour < 12 ? 'greeting.morning' : hour < 18 ? 'greeting.afternoon' : 'greeting.evening');
   const runEntrance = !overviewEntranceDone;
+  const visibleSectionIds = useVisibleSections();
   useEffect(() => {
     overviewEntranceDone = true;
   }, []);
 
   return (
     <motion.div
-      className="col-start-1 row-start-1 min-w-0"
+      className="col-start-1 row-start-1 w-full min-w-0"
       initial={false}
       animate={{ opacity: 1 }}
       exit={PAGE_EXIT}
@@ -195,15 +200,13 @@ function Overview({ now }: Readonly<{ now: Date }>) {
         animate={{ opacity: 1, y: 0 }}
       >
         <div className="mb-2 flex items-center justify-between gap-3">
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-ink-faint">
-            {now.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })}
-          </p>
-          <ThemeToggle />
+          <div className="flex items-center gap-3"><span className="nohm-monogram" aria-hidden>N</span><div><p className="text-sm font-semibold tracking-tight text-ink">Nohm</p><p className="text-xs font-semibold uppercase tracking-[0.16em] text-ink-faint">{date(now, { weekday: 'long', day: 'numeric', month: 'long' })}</p></div></div>
+          <div className="flex items-center gap-2"><GameModeButton /><ThemeToggle /></div>
         </div>
         <div className="grid items-end gap-5 sm:grid-cols-[1fr_auto]">
           <h1 className="hero-title">{greeting}</h1>
           <div className="hidden text-right sm:block">
-            <p className="hero-time tabular-nums">{now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}</p>
+            <p className="hero-time tabular-nums">{now.toLocaleTimeString(locale === 'fr' ? 'fr-FR' : 'en-GB', { hour: '2-digit', minute: '2-digit' })}</p>
           </div>
         </div>
       </motion.header>
@@ -215,8 +218,8 @@ function Overview({ now }: Readonly<{ now: Date }>) {
         <DailyCommandCenter />
       </motion.div>
       <div className="dashboard-section-heading">
-        <h2>Sections</h2>
-        <p>Open one for the full view.</p>
+        <h2>{t('overview.sections')}</h2>
+        <p>{t('overview.sectionsHint')}</p>
       </div>
       <motion.div
         className="dashboard-grid grid grid-cols-1 gap-4 lg:grid-cols-12"
@@ -224,7 +227,7 @@ function Overview({ now }: Readonly<{ now: Date }>) {
         initial={runEntrance ? 'hidden' : false}
         animate="visible"
       >
-        {SECTIONS.map((section) => (
+        {SECTIONS.filter((section) => visibleSectionIds.includes(section.id)).map((section) => (
           <SectionCard key={section.id} section={section} />
         ))}
       </motion.div>
@@ -238,6 +241,7 @@ export default function App() {
   const now = useCurrentTime();
   const [devTool] = useState(devToolFromUrl);
   const [skyDebugMinute, setSkyDebugMinute] = useState(() => minuteOfDay(new Date()));
+  const [showSetup, setShowSetup] = useState(needsSetup);
   useDeviceLocation();
   const skyNow = devTool === 'sky' ? timeAtMinute(now, skyDebugMinute) : now;
 
@@ -246,7 +250,9 @@ export default function App() {
       <div className="app-shell min-h-screen text-ink" style={skyFor(skyNow)}>
         <SteamGradientDefs />
         <BackgroundGlow />
-        <SlotGallery />
+        <Suspense fallback={null}>
+          <SlotGallery />
+        </Suspense>
       </div>
     );
   }
@@ -259,6 +265,7 @@ export default function App() {
     >
       <SteamGradientDefs />
       <BackgroundGlow />
+      {showSetup && <SetupWizard onClose={() => setShowSetup(false)} />}
       {devTool === 'sky' && <SkyTimeDebugger minute={skyDebugMinute} onMinuteChange={setSkyDebugMinute} />}
       <AnimatePresence>
         {route.view === 'section' && (

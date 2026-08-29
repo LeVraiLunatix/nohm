@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { SonarCloudData } from '@personal-dashboard/shared';
+import type { SonarCloudData } from '@nohm/shared';
 import { sonarCandidates } from './sonar.js';
 
 function sonarData(): SonarCloudData {

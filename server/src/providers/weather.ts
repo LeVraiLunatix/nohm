@@ -1,9 +1,9 @@
 import { z } from 'zod';
-import { weatherSchema, type WeatherData } from '@personal-dashboard/shared';
+import { weatherSchema, type WeatherData } from '@nohm/shared';
 import type { Provider } from '../scheduler.js';
 
 // Identify ourselves as api.met.no's terms require.
-const USER_AGENT = 'personal-dashboard/0.1 github.com/JoachimVN/Personal-Dashboard';
+const USER_AGENT = 'nohm/0.1 (+github.com/JoachimVN/Personal-Dashboard)';
 const GEOCODER_URL = 'https://nominatim.openstreetmap.org/reverse';
 
 // Minimal view of the Locationforecast 2.0 "complete" response.

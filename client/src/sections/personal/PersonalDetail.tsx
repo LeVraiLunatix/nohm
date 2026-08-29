@@ -9,7 +9,7 @@ import type {
   PowerData,
   TransitData,
   WidgetEnvelope,
-} from '@personal-dashboard/shared';
+} from '@nohm/shared';
 import { ArrangeableWidgetGrid, type ArrangeableItem } from '../../components/ArrangeableWidgetGrid';
 import { CalendarWidget } from '../../widgets/CalendarWidget';
 import { GmailWidget } from '../../widgets/GmailWidget';

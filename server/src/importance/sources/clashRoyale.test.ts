@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { ClashRoyaleBattle, ClashRoyaleData } from '@personal-dashboard/shared';
+import type { ClashRoyaleBattle, ClashRoyaleData } from '@nohm/shared';
 import { clashRoyaleCandidates } from './clashRoyale.js';
 import type { ClashRoyaleMoments } from '../types.js';
 

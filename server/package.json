@@ -1,5 +1,5 @@
 {
-  "name": "@personal-dashboard/server",
+  "name": "@nohm/server",
   "private": true,
   "version": "0.1.0",
   "type": "module",
@@ -27,11 +27,11 @@
     "db:cleanup-duplicates": "tsx scripts/cleanupDuplicateSignals.ts"
   },
   "dependencies": {
-    "@personal-dashboard/shared": "*",
+    "@nohm/shared": "*",
     "ccusage": "20.0.17",
     "cross-env": "^10.0.0",
     "dotenv": "^17.2.0",
-    "drizzle-orm": "^0.44.4",
+    "drizzle-orm": "^0.45.2",
     "express": "^5.1.0",
     "googleapis": "^173.0.0",
     "node-ical": "^0.26.1",

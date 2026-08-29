@@ -2,7 +2,7 @@ import { access, chmod, constants, readdir } from 'node:fs/promises';
 import { createRequire } from 'node:module';
 import os from 'node:os';
 import path from 'node:path';
-import type { AiUsageToolData, UsageHistoryPoint } from '@personal-dashboard/shared';
+import type { AiUsageToolData, UsageHistoryPoint } from '@nohm/shared';
 import { isUsageReset, type UsageHistoryStore } from '../../usageHistory.js';
 
 const require = createRequire(import.meta.url);

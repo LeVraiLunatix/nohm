@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { ClashOfClansData } from '@personal-dashboard/shared';
+import type { ClashOfClansData } from '@nohm/shared';
 import { clashOfClansCandidates } from './clashOfClans.js';
 
 describe('clashOfClansCandidates', () => {

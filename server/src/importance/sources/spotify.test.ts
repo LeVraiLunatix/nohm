@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { SpotifyData } from '@personal-dashboard/shared';
+import type { SpotifyData } from '@nohm/shared';
 import { spotifyCandidates } from './spotify.js';
 
 describe('spotifyCandidates', () => {

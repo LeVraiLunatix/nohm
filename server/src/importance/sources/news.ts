@@ -1,4 +1,4 @@
-import type { AiNewsData, NewsData } from '@personal-dashboard/shared';
+import type { AiNewsData, NewsData } from '@nohm/shared';
 
 import type { Candidate } from '../types.js';
 

@@ -1,4 +1,4 @@
-import { githubSchema, type GitHubData } from '@personal-dashboard/shared';
+import { githubSchema, type GitHubData } from '@nohm/shared';
 import type { Database } from './db/client.js';
 
 /** Cross-server last-good GitHub snapshot, so a fresh dev server can degrade gracefully. */

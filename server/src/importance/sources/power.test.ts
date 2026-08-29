@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { PowerData } from '@personal-dashboard/shared';
+import type { PowerData } from '@nohm/shared';
 import { powerCandidates } from './power.js';
 
 describe('powerCandidates', () => {

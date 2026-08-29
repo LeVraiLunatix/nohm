@@ -3,7 +3,7 @@
 // makes has to be answered locally instead. A single window.fetch wrapper is the smallest way to
 // do that: every widget, button and drag interaction keeps calling the same real endpoints it
 // always does, completely unaware it's talking to fixtures instead of a server.
-import type { CalendarData, HueData, SpotifyData, WidgetEnvelope } from '@personal-dashboard/shared';
+import type { CalendarData, HueData, SpotifyData, WidgetEnvelope } from '@nohm/shared';
 import { buildDemoEnvelopes, spotifyNowPlayingAt } from './fixtures';
 import { calendar } from './fixtures/calendar';
 
@@ -151,7 +151,7 @@ async function handleHueGroupRoute(
 
 function handleCodeRoutes(path: string, method: string): Response | undefined {
   if (path === '/api/code/projects' && method === 'GET') {
-    return jsonResponse({ projects: [{ repo: 'yourname/personal-dashboard' }, { repo: 'yourname/weekend-project' }] });
+    return jsonResponse({ projects: [{ repo: 'yourname/nohm' }, { repo: 'yourname/weekend-project' }] });
   }
   if (path === '/api/code/actions' && method === 'POST') {
     return jsonResponse({ ok: true });
@@ -161,7 +161,7 @@ function handleCodeRoutes(path: string, method: string): Response | undefined {
 
 async function handleGithubRoutes(path: string, method: string, init: RequestInit | undefined): Promise<Response | undefined> {
   if (path === '/api/github/repos' && method === 'GET') {
-    return jsonResponse({ repos: ['yourname/personal-dashboard', 'yourname/weekend-project', 'yourname/dotfiles'] });
+    return jsonResponse({ repos: ['yourname/nohm', 'yourname/weekend-project', 'yourname/dotfiles'] });
   }
   if (path === '/api/github/issues' && method === 'POST') {
     const body = await bodyOf(init);

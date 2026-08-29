@@ -1,5 +1,5 @@
 import { useEffect, useRef, type ReactNode } from 'react';
-import { valorantMapArt, type ValorantData } from '@personal-dashboard/shared';
+import { valorantMapArt, type ValorantData } from '@nohm/shared';
 import { useWidget } from '../../useWidget';
 import { WidgetBody } from '../../components/WidgetCard';
 import { relativeTime } from '../../lib/time';

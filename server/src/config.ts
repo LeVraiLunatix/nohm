@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { POWER_AREAS } from '@personal-dashboard/shared';
+import { POWER_AREAS } from '@nohm/shared';
 import { z } from 'zod';
 import { DERIVED_PROVIDER_IDS } from './providerHistory.js';
 

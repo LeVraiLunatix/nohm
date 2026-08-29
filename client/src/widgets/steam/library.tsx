@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
-import type { SteamData, SteamGame } from '@personal-dashboard/shared';
+import type { SteamData, SteamGame } from '@nohm/shared';
 import { formatHours } from './shared';
 import { relativeTime } from '../../lib/time';
 

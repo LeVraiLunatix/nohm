@@ -1,4 +1,4 @@
-import type { GitHubData } from '@personal-dashboard/shared';
+import type { GitHubData } from '@nohm/shared';
 
 import { computeDeviation } from '../../deviation.js';
 import type { Candidate } from '../types.js';

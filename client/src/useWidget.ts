@@ -1,5 +1,5 @@
 import { useCallback, useSyncExternalStore } from 'react';
-import type { WidgetEnvelope } from '@personal-dashboard/shared';
+import type { WidgetEnvelope } from '@nohm/shared';
 import { readWidget, refreshWidget, subscribeWidget, widgetSnapshot } from './widgetStore';
 
 export interface WidgetState<T> {

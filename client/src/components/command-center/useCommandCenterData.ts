@@ -9,7 +9,7 @@ import type {
   SpotifyData,
   SteamData,
   WeatherData,
-} from '@personal-dashboard/shared';
+} from '@nohm/shared';
 import { useWidget } from '../../useWidget';
 
 export type AiUsageByTool = Readonly<{

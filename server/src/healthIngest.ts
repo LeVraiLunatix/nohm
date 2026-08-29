@@ -2,7 +2,7 @@ import {
   healthIngestBatchSchema,
   healthIngestSchema,
   type HealthIngest,
-} from '@personal-dashboard/shared';
+} from '@nohm/shared';
 
 /**
  * Normalizes either wire shape the Apple Health Shortcut can post — a single day, or a

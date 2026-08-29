@@ -6,7 +6,7 @@ import {
   type SteamGame,
   type SteamLeaderboardEntry,
   type SteamLockedAchievement,
-} from '@personal-dashboard/shared';
+} from '@nohm/shared';
 import type { Provider } from '../scheduler.js';
 import type { SteamHistoryStore } from '../steamHistory.js';
 import type {

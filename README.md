@@ -1,543 +1,105 @@
-# Personal Dashboard
+# Nohm
 
-<p align="center">
-  <a href="https://github.com/JoachimVN/Personal-Dashboard/actions/workflows/ci.yml">
-    <img src="https://github.com/JoachimVN/Personal-Dashboard/actions/workflows/ci.yml/badge.svg" alt="CI" />
-  </a>
-  <a href="https://github.com/JoachimVN/Personal-Dashboard/actions/workflows/privacy-guard.yml">
-    <img src="https://github.com/JoachimVN/Personal-Dashboard/actions/workflows/privacy-guard.yml/badge.svg" alt="Privacy guard" />
-  </a>
-  <a href="https://sonarcloud.io/summary/new_code?id=JoachimVN_Personal-Dashboard3">
-    <img src="https://sonarcloud.io/api/project_badges/measure?project=JoachimVN_Personal-Dashboard3&amp;metric=alert_status" alt="Quality Gate Status" />
-  </a>
-</p>
+Nohm est un centre de contrôle personnel local pour Windows et le Web. Il rassemble météo,
+calendrier, GitHub, IA, santé, jeux et musique dans une interface française par défaut, avec
+l’anglais disponible dans les paramètres.
 
-One glanceable page for life + dev: weather, calendar, email, GitHub, transit departures,
-electricity prices, and AI usage. Runs locally on
-your own machine (macOS or Windows) and is just a web app at `localhost:4821`: open it in a browser
-and you're done.
+Le produit reste utile sans compte central : les secrets demeurent côté serveur, les services non
+configurés restent désactivés proprement et PostgreSQL n’est plus requis pour démarrer.
 
-Everything beyond that is optional. [Tailscale](https://tailscale.com) is only needed to reach it
-*from your phone*; without it the dashboard works fine on the machine it runs on. Individual widgets
-have their own requirements (iMessage is macOS-only, Health needs an iPhone Shortcut), and any
-widget you don't configure simply shows as "not configured" rather than breaking the page.
+## État de cette branche
 
-## Demo
+La refonte est développée sur `feat/nohm` sans modification du dépôt distant.
 
-**[joavn.dev/dashboard](https://joavn.dev/dashboard)** — a fully interactive build running entirely
-on fake, anonymized data (`client/src/demo/`), no backend involved. Published as a static build,
-embedded in a separate `Portfolio` repo. `.github/workflows/sync-portfolio.yml` builds with
-`--base=/dashboard/` on every push to `main` (when client/shared sources or build config change) and
-pushes the built `client/dist` into the `Portfolio` repo. `sync-portfolio.sh` does the same thing
-locally/manually.
+- identité Nohm, icônes PWA et assets Windows générés ;
+- couche i18n centrale FR/EN, français par défaut ;
+- assistant de première configuration et espace Paramètres (comptes et clés chiffrés, OAuth, visibilité, cadence, raccourci jeu) ;
+- expérience Musique unifiée : Cider, Spotify, Last.fm et contrat MusicKit ;
+- mode jeu manuel avec raccourci `Alt+Maj+G` et réduction des rafraîchissements ;
+- démarrage local sans base en mémoire, PostgreSQL restant disponible pour la persistance ;
+- shell Tauri 2 préparé pour Windows (tray, lancement automatique, instance unique, MSI/NSIS).
 
-## Screenshots
+Le shell Windows n’est pas encore un installateur autonome : la chaîne Rust n’est pas présente sur
+la machine de développement et le serveur Express doit encore être emballé en sidecar. Voir
+[docs/WINDOWS.md](docs/WINDOWS.md).
 
-<p align="center">
-  <img src="docs/screenshots/01-overview.png" alt="Personal Dashboard overview: next calendar event, weather, inbox, GitHub, activity, and now playing"/>
-  <br>
-  <em>Overview: the command center picks its own hero and tiles by importance, not a fixed layout — tap a tile to jump straight to its widget</em>
-</p>
+## Démarrage rapide
 
-<p align="center">
-  <img src="docs/screenshots/02-spotify.png" alt="Spotify section: now playing and top artists"/>
-  <br>
-  <em>Spotify: now playing, top artists, top tracks, and all-time stats</em>
-</p>
+Prérequis : Node.js 22.5 ou plus récent et npm.
 
-<p align="center">
-  <img src="docs/screenshots/03-health.png" alt="Health section: 30-day activity, heart-rate, and blood-oxygen trends"/>
-  <br>
-  <em>Health: 30-day trends charted against your goals, from an Apple Health Shortcut</em>
-</p>
-
-<p align="center">
-  <img src="docs/screenshots/04-ai-usage.png" alt="AI usage section: Claude Code and Codex 5-hour and weekly allowance charts"/>
-  <br>
-  <em>AI usage: Claude Code and Codex allowance, with resets visible as gaps in the history</em>
-</p>
-
-<p align="center">
-  <img src="docs/screenshots/05-github.png" alt="GitHub section: issue capture, code session launcher, activity, and contribution grid"/>
-  <br>
-  <em>GitHub: capture an issue, launch a coding session, and see what's moving across your repos</em>
-</p>
-
-*(Screenshots are generated from fake, anonymized data via [`server/scripts/screenshots.ts`](server/scripts/screenshots.ts), and kept up to date automatically by [`.github/workflows/screenshots.yml`](.github/workflows/screenshots.yml).)*
-
-## Stack
-
-npm-workspaces monorepo:
-
-- **`client/`**: React + Vite + Tailwind SPA with a PWA manifest (install to phone home screen).
-- **`server/`**: Express on `127.0.0.1:4821`. Each data source is a *provider* polled on its own interval; results are schema-validated (zod) and cached in memory. Widgets read the cache via `/api/widgets/:id`.
-- **`shared/`**: zod schemas + types shared by both.
-
-Persistent health, AI-usage, and Spotify history live in Railway Postgres so dashboard installs on
-different machines see the same history. The connection string remains in ignored `server/.env`;
-credentials and OAuth tokens stay in ignored `server/.tokens/`, while local-only layout state remains
-in `server/.data/`.
-
-## Shared Postgres setup
-
-`DATABASE_URL` is required. Set it to Railway's **public** Postgres URL (not the internal
-`postgres.railway.internal` URL, which only works from Railway services), then migrate:
-
-```bash
-npm run db:migrate -w server
-```
-
-For an existing installation, stop every dashboard server first, back up each machine's
-`server/.data/`, choose the authoritative history source, and import it explicitly:
-
-```bash
-npm run db:import-json -w server -- /path/to/server/.data
-```
-
-The importer is idempotent for the same export. Keep the JSON backups as rollback material; do not
-run two old JSON-backed dashboard versions while performing the cutover.
-
-## Getting started
-
-```bash
+```powershell
+cd D:\Code\Nohm
 npm install
-cp server/.env.example server/.env              # fill in what you want enabled
-cp server/config.example.json server/config.json  # optional, defaults are fine
-npm run dev                                     # server :4822 + client :5173
+Copy-Item server/.env.example server/.env
+Copy-Item server/config.example.json server/config.json
+npm run dev
 ```
 
-Widgets without credentials show as "not configured" instead of breaking; enable them one at a time.
+L’interface de développement est disponible sur `http://127.0.0.1:5173`. Sans `DATABASE_URL`,
+Nohm utilise un cache mémoire non persistant.
 
-Production mode (server serves the built client at `http://localhost:4821`):
+Mode production Web :
 
-```bash
+```powershell
 npm run build
 npm start
 ```
 
-## Run at login
+Puis ouvrir `http://127.0.0.1:4821`.
 
-**macOS**: installs a launchd agent that keeps `npm start` running and restarts it at login:
+## Configuration
 
-```bash
-./scripts/install-launchd.sh
+Copiez `server/.env.example` vers `server/.env`, puis activez seulement les connecteurs nécessaires.
+Les secrets ne sont jamais exposés au client. Voir [docs/CONFIGURATION_FR.md](docs/CONFIGURATION_FR.md).
+
+- **Cider** est prioritaire pour Apple Music local et permet les commandes via son RPC officiel ;
+- **Spotify** conserve l’intégration OAuth existante, actuellement en lecture seule ;
+- **Last.fm** fournit l’historique, les favoris et les statistiques en lecture seule ;
+- **MusicKit** est prévu par le contrat unifié mais reste inactif sans clé Apple Developer.
+
+Voir [docs/MUSIC_CAPABILITIES.md](docs/MUSIC_CAPABILITIES.md) pour les capacités exactes.
+
+## Commandes
+
+```powershell
+npm run dev          # serveur et client en développement
+npm run build        # build Web/PWA
+npm start            # serveur de production sur :4821
+npm run typecheck    # TypeScript sur les trois workspaces
+npm test             # suite Vitest serveur
+npm run desktop:dev  # nécessite Rust + prérequis Tauri
+npm run desktop:build
 ```
 
-Production runs from its own **deploy clone** (`~/.local/share/personal-dashboard/repo`), not from
-your working copy, so a dirty tree or a WIP branch can't take down the dashboard your phone is
-looking at. Credentials and fetched data (`.env`, `config.json`, `.tokens/`, `.data/`) are moved once
-into `~/.local/share/personal-dashboard/state` and symlinked into both checkouts, so the two share a
-single set of OAuth tokens: keeping two copies would mean two clients refreshing the same grant, and
-Spotify and Hue rotate refresh tokens on use, so one copy would eventually be left with a dead token.
+## Architecture
 
-Opt in to auto-update and a second agent polls your `origin/main` every 5 minutes, hard-resets the
-deploy clone to it and restarts, so merging to `main` updates the dashboard on your phone by itself:
+- `client/` : React 19, Vite, PWA, interface et état local ;
+- `server/` : Express, connecteurs, cache, planificateur et secrets ;
+- `shared/` : schémas Zod et contrats partagés ;
+- `src-tauri/` : shell Windows Tauri 2 ;
+- `docs/` : décisions, configuration et limites connues.
 
-```bash
-PD_AUTO_UPDATE=1 ./scripts/install-launchd.sh     # PD_UPDATE_INTERVAL=300 to change the cadence
+Chaque connecteur produit une enveloppe validée par Zod. Le serveur planifie les appels, conserve le
+dernier état valide et n’envoie au client ni jeton ni détail d’erreur sensible.
+
+## Données et confidentialité
+
+- **Mémoire locale** : zéro configuration, données perdues au redémarrage ;
+- **PostgreSQL** : historique persistant et synchronisation avancée ;
+- **SQLite** : non implémenté dans cette itération, car le stockage existant utilise des primitives
+  PostgreSQL spécifiques. Voir [docs/STORAGE.md](docs/STORAGE.md).
+
+N’exposez pas `HOST=0.0.0.0` sans couche d’authentification. L’accès distant recommandé reste un
+tunnel privé comme Tailscale.
+
+## Vérification
+
+```powershell
+npm run typecheck
+npm test
+npm run build
+npm audit --omit=dev
 ```
 
-Installing it is the one manual step, and it has to be: nothing here listens for inbound connections,
-so GitHub can't reach into your machine to start anything; something has to run locally once. After
-that it's hands-off. The updater refreshes its own copy too, so a commit that changes the update
-script still lands by itself; only a change to the launchd agents themselves (the poll interval, say)
-needs the installer re-run.
-
-**Windows**: two options:
-
-- *Startup shortcut*: `Win+R` → `shell:startup` → add a shortcut with target
-  `cmd /c "cd /d C:\path\to\Personal-Dashboard && npm start"` (runs with a visible console).
-- *Task Scheduler* (headless): create a task triggered **At log on**, action `cmd`, arguments
-  `/c cd /d C:\path\to\Personal-Dashboard && npm start`, and tick "Run whether user is logged on or not".
-
-Run `npm run build` once first on Windows so `client/dist` exists.
-
-## Phone access (Tailscale Serve)
-
-The server binds to loopback only. To reach it from your phone:
-
-```bash
-tailscale serve 4821
-```
-
-This proxies the dashboard onto your tailnet with HTTPS (required for PWA install). Requirements: Tailscale installed and signed in on this machine and on your phone (same tailnet), and HTTPS certificates enabled once in the [admin console](https://login.tailscale.com/admin/dns) (Enable HTTPS).
-
-On the phone, open the printed `https://<machine>.<tailnet>.ts.net` URL in Safari and use Share → **Add to Home Screen**: the dashboard then launches fullscreen like an app. Both your Mac and Windows PC can serve their own instance; the phone just bookmarks each machine's URL.
-
-Setting `HOST=0.0.0.0` instead exposes the dashboard **unauthenticated** on your LAN; only do that on networks you trust.
-
-## Checks
-
-```bash
-npm run typecheck   # tsc --noEmit in all workspaces
-npm test            # vitest (scheduler/cache behavior)
-```
-
-## Widget setup
-
-### Weather (MET Norway)
-
-No key needed: set `WEATHER_LAT` / `WEATHER_LON` in `server/.env`.
-
-### Transit departures (Entur — Norway)
-
-No key needed. With `WEATHER_LAT` / `WEATHER_LON` set, the widget automatically shows real-time
-departures from the stops nearest those coordinates, using [Entur](https://developer.entur.org)'s
-national journey-planner API (covers every Norwegian operator: AtB, Ruter, Skyss, …). When the
-dashboard PWA shares your phone's location, the stops follow you the same way weather does.
-
-To make specific stops (e.g. the ones you actually take, which auto-discovery might skip in favor
-of a nearer but less useful stop) take priority, list their NSR ids in `server/config.json` under
-`transit.stopIds` — find ids at [stoppested.entur.org](https://stoppested.entur.org) (they look
-like `NSR:StopPlace:41613`). These are shown whenever you're within `transit.favoriteRadiusMeters`
-(default 5 km) of one of them; if you're not near any of them right now, it falls back to
-auto-discovery, capped at `transit.maxStops` stops within `transit.nearbyRadiusMeters` (default
-2 km). `transit.departuresPerStop` tunes how much the card shows per stop.
-
-### Electricity spot price (Norway)
-
-No key needed. With `WEATHER_LAT` / `WEATHER_LON` set (or the dashboard PWA sharing your phone's
-location), the widget auto-detects your [bidding area](https://www.nordpoolgroup.com/en/maps/)
-(`NO1` Øst … `NO5` Vest) from those coordinates via Entur's reverse geocoder, the same way transit
-follows the dashboard's location.
-
-To pin a specific area instead (e.g. it's wrong near a zone border, or you want a location other
-than your own), set it explicitly in `server/config.json` — this always overrides auto-detection:
-
-```json
-{ "power": { "area": "NO3" } }
-```
-
-The card charts today's (and, after ~13:00, tomorrow's) hourly Nord Pool spot price from the free
-[Hva koster strømmen.no](https://www.hvakosterstrommen.no/strompris-api) API, and the command
-center gets "price spike now" / "cheaper power ahead" signals. Prices are the raw day-ahead spot
-price — grid rent, taxes, and strømstøtte are not included.
-
-### GitHub
-
-Set `GITHUB_USERNAME` and `GITHUB_TOKEN` in `server/.env`. Create a **classic PAT** (github.com → Settings → Developer settings) with the `repo` scope. A fine-grained PAT does not work here: `GET /users/{username}/events` (used for the activity feed) doesn't support fine-grained PATs at all, so private-repo activity silently never shows up.
-
-The repo-health card shows all your owned, non-fork, non-archived repos, fetched live from the GitHub API; there's no pinned-repo list to maintain in `server/config.json`.
-
-Optionally set `GITHUB_ISSUES_TOKEN` for the **capture issue** button (creates an issue on a repo from the dashboard). Falls back to `GITHUB_TOKEN` when unset, so it only needs setting if you want the issue-creation token scoped differently from the read/activity one.
-
-Note: the activity feed uses GitHub's events API, which is **delayed** (typically minutes); it is not real-time.
-
-### AI usage (Claude Code / Codex)
-
-Each service has its own card showing its current rolling allowance: **five-hour** and **weekly** percentages, with reset times, not token totals or estimated costs. A thin marker on each bar shows where usage "should" be if it tracked evenly with the window's elapsed time; the marker turns amber when usage is running ahead of that pace.
-
-- **Codex:** no setup when Codex is signed in locally; its local session snapshots contain the current account limits. This card polls those local files only (no network call), so it refreshes independently and much more often than Claude; tune the interval with `aiUsage.codexRefreshMs` (ms, default `30000`) in `server/config.json`.
-- **Claude Code:** no setup beyond having the `claude` CLI signed in locally on this machine. The card shells out to `claude -p "/usage"` (the same local command `/usage` runs inside an interactive session) and parses its report. This is free and reliable, unlike the account-wide quota endpoint, which turned out to be rate-limited to the point of never returning a usable reading from server-side automation. Each call writes a small local session transcript file, so this card refreshes on a coarser cadence than Codex; tune it with `aiUsage.claudeRefreshMs` (ms, default `900000` / 15 min) in `server/config.json`.
-
-Each machine's dashboard reports that machine's signed-in accounts only.
-
-### News
-
-No key needed, no defaults — both feed lists start empty until you add RSS feeds in `server/config.json`:
-
-- `news.feeds`: general-purpose RSS feeds (e.g. Hacker News), shown in the Personal section.
-- `aiNews.feeds`: RSS feeds each tagged with a `provider` (`"openai"` or `"anthropic"`), shown in the AI usage section alongside the Claude Code / Codex allowance cards.
-
-```json
-{
-  "news": { "feeds": [{ "name": "Hacker News", "url": "https://news.ycombinator.com/rss" }] },
-  "aiNews": {
-    "feeds": [
-      { "name": "OpenAI", "url": "https://openai.com/news/rss.xml", "provider": "openai" },
-      { "name": "Anthropic", "url": "https://news.google.com/rss/search?q=site:anthropic.com/news&hl=en-US&gl=US&ceid=US:en", "provider": "anthropic" }
-    ]
-  }
-}
-```
-
-### Calendar (iCloud / Apple Calendar)
-
-1. Go to [account.apple.com](https://account.apple.com) → Sign-In and Security → **App-Specific Passwords** → generate one (call it e.g. `dashboard`).
-2. Set in `server/.env`:
-   - `ICLOUD_USERNAME`: your Apple ID email
-   - `ICLOUD_APP_PASSWORD`: the generated `xxxx-xxxx-xxxx-xxxx` password
-
-By default all event calendars are shown; to limit it, list display names in `server/config.json` under `calendar.allowlist` (e.g. `["Personal", "NTNU"]`).
-
-Apple does not always expose subscribed web calendars through CalDAV. Add any such private HTTPS ICS feed in `server/.env`, including a display name that can also be used in the allowlist:
-
-```sh
-CALENDAR_ICS_FEEDS='[{"name":"Batabiboing","url":"https://batabiboing.vercel.app/api/calendar/<calendar-id>"}]'
-```
-
-When `DASHBOARD_PUSH_URL` and `DASHBOARD_PUSH_SECRET` are already configured for Batabiboing, all of its active countdowns are included automatically through a protected aggregate feed.
-
-### Gmail
-
-One-time setup:
-
-1. In [console.cloud.google.com](https://console.cloud.google.com), create a project (e.g. `personal-dashboard`), enable the **Gmail API**, and configure the OAuth consent screen.
-2. Create an OAuth client of type **Desktop app**; put its ID/secret in `server/.env` as `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET`.
-3. Run `npm run setup:gmail -w server`, open the printed URL, approve. The refresh token is saved to `server/.tokens/gmail.json` (owner-only permissions); restart the server.
-
-The widget requests only the **`gmail.metadata`** scope: message headers and labels, never bodies.
-
-⚠️ **Testing-mode expiry**: while the OAuth consent screen is in *Testing* status, Google expires refresh tokens after **7 days** and you'd have to re-run setup weekly. Fix: on the consent screen page, add yourself as a test user, then **publish** the app (it can stay unverified; only your own account uses it); published apps get long-lived refresh tokens.
-
-### Spotify
-
-One-time setup:
-
-1. In [developer.spotify.com](https://developer.spotify.com/dashboard), create an app; put its Client ID/secret in `server/.env` as `SPOTIFY_CLIENT_ID` / `SPOTIFY_CLIENT_SECRET`.
-2. Run `npm run setup:spotify -w server`. It prints an exact redirect URI (`http://127.0.0.1:8888/callback`); add that under the app's **Settings → Redirect URIs** and save.
-3. Open the printed authorize URL, approve. The refresh token is saved to `server/.tokens/spotify.json` (owner-only permissions); restart the server.
-
-Read-only scopes (`user-read-currently-playing`, `user-read-recently-played`, `user-top-read`) power the Spotify section: now playing, recently played, and top artists/tracks over the last 4 weeks / 6 months / all time. Spotify's API has no all-time or top-albums endpoint, so those are seeded once from Spotify's long_term (multi-year) top lists and then grown from observed plays in the shared Postgres history.
-
-### Steam
-
-1. Create a Steam Web API key at [steamcommunity.com/dev/apikey](https://steamcommunity.com/dev/apikey) (any domain name works — the key is only ever used server-side).
-2. Find your SteamID64: open your Steam profile in a browser and use a lookup tool such as [steamid.io](https://steamid.io) rather than pasting the API key into any third-party site.
-3. Set `STEAM_API_KEY` and `STEAM_ID` in `server/.env`, then restart the server.
-
-Steam's own privacy settings gate what the widget can show: **Game details** must be public for library totals and achievement progress, and **Friends list** visibility determines whether the friends-playing signal works — with either set to private, that part of the widget degrades to a quiet empty state rather than failing. The integration is read-only (it never writes to your Steam account) and the API key is only ever used server-side, never sent to the browser.
-
-### Roblox
-
-Sits alongside Steam and Clash Royale as a tab on the Games page.
-
-1. Set `ROBLOX_ID` in `server/.env` to your Roblox username or numeric user ID.
-2. Restart the server. Profile, friends count, badges, and games you've created show up immediately — all read from Roblox's public, unauthenticated endpoints.
-
-Presence (what you're playing right now) and favorited games additionally need `ROBLOSECURITY`, a full-account session cookie (not a scoped API key — anyone holding it can act as your account, no 2FA required, since it *is* an already-logged-in session):
-
-1. Log into roblox.com in a browser, open DevTools → Application/Storage → Cookies → `roblox.com`, and copy the full value of `.ROBLOSECURITY` — including the `_|WARNING:-DO-NOT-SHARE-THIS...|_` prefix, which is part of the literal value, not a comment.
-2. Set `ROBLOSECURITY` in `server/.env`.
-
-It expires/rotates periodically (faster if the requesting IP differs from where it was issued — running the dashboard from the same home network you copied it from helps), so expect to redo this occasionally; a run of 401s from the Roblox widget after it's been working means the cookie is dead, not a bug. Revoke it anytime by logging out of all Roblox sessions or changing your password.
-
-### Clash Royale
-
-1. Create an API key at [developer.clashroyale.com](https://developer.clashroyale.com) — keys are locked to the public IP address making requests (not a redirect URI like the OAuth integrations below; Supercell's API checks the source IP on every request, and there's no wildcard/CIDR option), so use the IP the dashboard server actually runs from.
-2. Set `CLASH_ROYALE_API_KEY` and `CLASH_ROYALE_ID` (your player tag, e.g. `#ABC123`) in `server/.env`, then restart the server.
-
-Read-only: player profile, current deck, upcoming chest cycle, and recent battle log.
-
-If the server's public IP changes (dynamic ISP address, or the machine moves between networks), requests start failing with HTTP 403 until you update the allowlist at developer.clashroyale.com — the server logs its current public IP once at startup (`[clash-royale] server's current public IP is ...`) as a quick copy-paste source when that happens.
-
-### Valorant
-
-Uses [HenrikDev's](https://docs.henrikdev.xyz) unofficial Valorant API — Riot doesn't offer a personal-use stats API of its own (its official Developer keys expire every 24 hours unless you're approved for production access), and HenrikDev's is what most third-party Valorant stat sites are built on.
-
-1. Log into [api.henrikdev.xyz/dashboard](https://api.henrikdev.xyz/dashboard/) (Discord OAuth) and generate a key under **API Keys** — the free Basic tier is instant, no approval wait.
-2. Set `HENRIKDEV_API_KEY`, `RIOT_ID` (your Riot ID as `Name#Tag`), and `RIOT_REGION` (`na`/`eu`/`ap`/`kr`, defaults to `eu`) in `server/.env`, then restart the server.
-
-Read-only: account level, current and peak competitive rank, current-season win rate, and the last 10 matches (map, agent, KDA, headshot %, result). Rank and agent icons are pulled from `valorant-api.com`'s public asset CDN, which needs no key of its own.
-
-### SonarCloud
-
-Shows up as a "Code quality" block at the bottom of the GitHub page, listing every project in your org with its quality gate status, ratings, coverage, and duplication — one card per repo.
-
-1. Generate a user token at [sonarcloud.io/account/security](https://sonarcloud.io/account/security).
-2. Set `SONARCLOUD_TOKEN` and `SONARCLOUD_ORG` (the `key` in `sonarcloud.io/organizations/<key>`) in `server/.env`, then restart the server.
-
-Every project in the org is shown; there's no per-repo allowlist.
-
-### Philips Hue
-
-Lights go through Philips' cloud (the official [Remote API](https://developers.meethue.com)), the same path the Hue phone app uses, so the widget works no matter what network the Mac is on. The bridge's LAN IP is not involved.
-
-One-time setup:
-
-1. Create a free developer account at [developers.meethue.com](https://developers.meethue.com), then under **My Apps** create a new Remote Hue API app. Set the **Callback URL** to exactly `http://127.0.0.1:8842/callback`.
-2. Put the app's credentials in `server/.env` as `HUE_CLIENT_ID` / `HUE_CLIENT_SECRET`.
-3. Run `npm run setup:hue -w server`, open the printed URL, log in with your Philips Hue account and approve. The script exchanges the OAuth code and remotely provisions a bridge allowlist user (the cloud equivalent of pressing the link button), saving both to `server/.tokens/hue.json` (owner-only permissions).
-4. Restart the server: like every env-configured widget, Hue is only checked at startup.
-
-Control is read + write: toggling a light, dragging its brightness slider, or tapping one of your Hue app scenes (shown as chips grouped by room) sends the change through the cloud to the bridge. Access tokens auto-refresh; if the widget stops working after months of the server being off, the refresh token has expired; re-run step 3.
-
-### iMessage (macOS only)
-
-Reads `~/Library/Messages/chat.db` directly (read-only), no setup beyond granting **Full Disk Access**:
-
-1. System Settings → Privacy & Security → **Full Disk Access**.
-2. Add the process that actually reads the file, not just "Terminal" in the abstract:
-   - Running via `npm run dev` from Terminal.app or iTerm: add that terminal app.
-   - Running via the `install-launchd.sh` agent: launchd execs `node` directly with no GUI parent, so add the **node binary itself** (find it with `which node`, e.g. `/opt/homebrew/bin/node`).
-3. Restart the server: granting access mid-session doesn't retroactively enable the widget.
-
-Shows the most recent message per conversation and an unread count. Personal chat handles are resolved through the local macOS Contacts database, while group/business display names come from Messages; unresolved handles fall back to their phone number or email. Modern `attributedBody` message text is decoded, and attachment-only messages show as `[attachment]`.
-
-⚠️ **Privacy**: message previews are cached server-side and served to any device that reaches this dashboard, i.e. your phone over Tailscale, not just something read and kept on the Mac.
-
-### Health (Apple Health via Shortcut)
-
-Apple Health can't be read from a server, so the phone pushes to the dashboard instead. There's no
-external setup and no credentials; the widget appears immediately (empty until the first post) and
-is fed by an **Apple Shortcut** you build once.
-
-Build a Shortcut (and, optionally, a Personal Automation that runs it on a schedule) that:
-
-1. Uses **Get Health Sample / Find Health Samples** actions to read today's totals (steps, active
-   energy, exercise minutes, etc.). For steps, use one action filtered to **Apple Watch** and one
-   filtered to **iPhone** when possible.
-2. Builds a **Dictionary** with any of these keys (all optional, all merged into today's entry) so
-   you can post them from separate actions:
-
-   | key | unit |
-   | --- | --- |
-   | `watchSteps` | count, from Apple Watch |
-   | `phoneSteps` | count, from iPhone |
-   | `steps` | count, legacy fallback only |
-   | `activeEnergyKcal` | kcal |
-   | `exerciseMinutes` | minutes |
-   | `standHours` | hours |
-   | `heartRate` | bpm |
-   | `restingHeartRate` | bpm |
-   | `walkingHeartRate` | bpm |
-   | `bloodOxygenPercent` | percent |
-
-   Add `date` (`YYYY-MM-DD`) only to backfill a past day; it defaults to today.
-3. **Gets Contents of URL**: `POST http://<your-tailscale-name>:4821/api/health/ingest`, Request
-   Body **JSON**, set to the dictionary.
-
-Posts through the day overwrite that day's totals (send cumulative values). The dashboard keeps both
-step sources and uses the higher one for the daily goal and trends, rather than adding them, because
-the same walk may be recorded by both devices. The raw values are retained only to calculate that
-single normalized step total. Step goal, exercise-minute goal and history retention live under
-`health` in `server/config.json` (defaults: 10 000 steps, 30 min, 30 days).
-
-To survive the server being off/asleep when the Shortcut fires, post a rolling window instead of a
-single day: send `{ "days": [ ... ] }` where each entry is the dictionary above with its `date` set
-(up to 31 entries). Every day in the window is merged like a normal post, so the first successful
-run after an outage backfills the gap automatically; e.g. always sending the last 7 days makes any
-outage shorter than a week self-healing.
-
-#### Always-on ingest (optional)
-
-The rolling window covers an outage, but the Shortcut still has to name one machine, and the post
-fails outright whenever that machine is asleep. Storage is not what goes down — every dashboard
-already shares one Railway Postgres — so `server/src/ingest.ts` runs the ingest route, and nothing
-else, as its own always-on Railway service. Point the Shortcut at it once and it stops caring which
-machine is awake.
-
-The service has no route back to a dashboard — they sit on a tailnet and are usually asleep — so it
-announces each write through the one thing every installation shares, the database. It issues a
-Postgres `NOTIFY` on the `health_ingest` channel and each dashboard holds a matching `LISTEN`,
-refreshing the health and command-center providers on arrival instead of waiting out the 5-minute
-poll. Delivery is a single round trip (~170 ms against Railway), coalesced over a second so a
-31-day window causes one refresh rather than 31. Announcements are best-effort: a failed one costs
-freshness, never the ingest, because the poll still catches up. A dashboard also refreshes whenever
-it subscribes, so one that was asleep or lost its connection picks up whatever it missed on rejoin.
-
-Deploy it as a second service in the **same Railway project** as the Postgres:
-
-1. **New** → **GitHub Repo** → this repo. The tracked `railway.json` supplies the start command and
-   healthcheck; no build step runs, because the service executes TypeScript through `tsx`.
-2. Variables: `DATABASE_URL` (use the **internal** `postgres.railway.internal` URL — this service
-   runs inside Railway, so it doesn't need the public proxy) and `HEALTH_INGEST_TOKEN`, a random
-   string of at least 24 characters. The service refuses to start without both, so setting them
-   after the first deploy means redeploying.
-3. Also set `NIXPACKS_INSTALL_CMD=npm ci --omit=dev`. The ingest service needs only `express`,
-   `postgres`, `drizzle-orm`, `dotenv`, `zod` and `tsx`; the default `npm ci` additionally pulls in
-   Playwright, Vitest and the client's toolchain — roughly 400 packages that only slow the build
-   down and give it more ways to fail.
-4. **Settings** → **Networking** → **Generate Domain**.
-5. Confirm the start command is `npm run start:ingest -w server` and not the dashboard's `npm start`,
-   which would try to boot every provider and fail on the credentials this service doesn't have.
-
-Then repoint every Shortcut's **Get Contents of URL** — tap **Show More** to reach the fields below
-the URL:
-
-| field | value |
-| --- | --- |
-| URL | `https://<service>.up.railway.app/api/health/ingest` |
-| Method | `POST` |
-| Headers | Key `Authorization`, Text `Bearer <HEALTH_INGEST_TOKEN>` |
-| Request Body | `JSON`, set to the dictionary as before |
-
-Three things that reliably go wrong here:
-
-- **The `Bearer` prefix is part of the header value.** The word `Bearer`, one space, then the token.
-  A bare token is not a bearer credential and returns `401 unauthorized`. iOS also capitalises the
-  first character of a text field, which silently corrupts a token starting with a lowercase letter —
-  paste the value rather than typing it.
-- **The path has to end in `/api/health/ingest`.** `/api/health` is the liveness probe: it answers
-  `{"ok":true}` and discards the body, so a Shortcut aimed there appears to succeed while storing
-  nothing. A trailing slash on `/ingest/` is harmless.
-- **Getting `{"error":"unauthorized"}` back means the request arrived**, so the URL and method are
-  already right and only the header is wrong. A network-level failure looks different — iOS reports
-  it as "the network connection was lost".
-
-The phone no longer needs Tailscale up for health posts once this is in place, so the Shortcut also
-works on cellular with the VPN off.
-
-`node-pty` is an **optional** dependency for this reason: it ships prebuilds for macOS and Windows
-but not `linux-x64`, where it falls back to compiling against a Python toolchain the build image
-doesn't have — `npm ci` dies on a missing Python and takes the whole build with it. Only the AI-usage
-probes import it, and they never run on Linux, so a Linux install skips it rather than failing
-outright.
-
-⚠️ Unlike the dashboards, this endpoint is on the public internet rather than behind Tailscale, so
-that token is the only thing in front of it. It's the one route the service exposes and it can only
-write `health_days`, but treat the token like any other secret in `server/.env`. Skip this whole
-section if you'd rather keep every ingress on the tailnet — the rolling window above still makes
-outages self-healing.
-
-## GitHub webhook (optional)
-
-The GitHub widget polls, so a push shows up whenever its interval comes round. If you also run the
-always-on ingest service, GitHub can tell it the moment something happens instead.
-
-Set `GITHUB_WEBHOOK_SECRET` on the Railway service to a random string — without it the route isn't
-mounted at all, so an installation that never set one up has no unauthenticated GitHub surface
-sitting there. Then, per repository, **Settings** → **Webhooks** → **Add webhook**:
-
-| field | value |
-| --- | --- |
-| Payload URL | `https://<service>.up.railway.app/api/github/webhook` |
-| Content type | `application/json` — the default `x-www-form-urlencoded` will not work |
-| Secret | the same `GITHUB_WEBHOOK_SECRET` |
-| SSL verification | enabled |
-| Events | *Let me select individual events* |
-
-Tick pushes, pull requests, pull request reviews and review comments, issues, issue comments, branch
-or tag creation and deletion, releases, forks, stars, watches, and repositories. Not *send me
-everything*: on a repo with CI, `check_run` and `workflow_run` fire constantly and change nothing
-the dashboard shows. Those are ignored server-side too (`IGNORED_GITHUB_EVENTS`), so a stray tick
-cannot cause a refresh storm.
-
-The webhook is a **cache-invalidation signal, not a data source**. A verified event is archived
-under `source = 'github-webhook'`, then announced on the `provider_refresh` channel so every
-dashboard re-polls the GitHub API — which already knows how to assemble its own payload. That
-avoids modelling every GitHub event shape, and means the widget updates rather than diverging from
-what the API would say. Requests are acknowledged before the announcement, because GitHub times out
-at 10 seconds and retries.
-
-Webhooks only fire for repositories you administer, so this **supplements** polling rather than
-replacing it; activity on other people's repos still arrives on the usual interval.
-
-## Stored history
-
-Every provider's payload is archived to `signal_history` as it settles, so the dashboard
-accumulates a queryable record instead of only ever holding the latest reading in memory. Two
-things keep that from being wasteful:
-
-- **Unchanged readings are not written.** `SignalHistoryStore.record` compares against the current
-  value first, so a provider polling every minute that only moves twice a day costs two rows, not
-  1440.
-- **Only `ready` envelopes are recorded.** A failed fetch leaves the last good payload in the cache
-  — that is what `stale` means — and re-recording it would forge an observation that never happened.
-
-**Nothing is ever pruned.** The history is the point; no retention window applies to this table.
-
-`command-center` and `activity-push` are excluded by default, holding no data of their own: the
-first is derived from the other providers, the second is a delivery mechanism. Change that list
-under `history.excludeProviders` in `server/config.json`; existing rows are left alone.
-
-⚠️ **Privacy**: this includes the Gmail and iMessage payloads, which carry subjects and message
-previews. They are stored indefinitely in your Railway Postgres — a step beyond the server-side
-cache the iMessage widget already keeps. Add `"gmail"` and `"imessage"` to `history.excludeProviders`
-if you would rather they stayed in memory.
-
-Query it with `select value from signal_history where source = 'clash-royale' order by recorded_at`.
-
-## Arranging widgets
-
-The Personal section's widget cards can be reordered: open **Personal** → **Arrange** (top-right), then drag a card to its new position. The order is saved server-side (`server/.data/layout.json`, gitignored) and shared across every device that reaches this dashboard.
+Décisions et limites : [Windows](docs/WINDOWS.md), [mode jeu](docs/GAME_MODE.md),
+[audit SONAR](docs/SONAR_AUDIT.md).

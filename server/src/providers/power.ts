@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { powerDataSchema, type PowerArea, type PowerData, type PowerHour } from '@personal-dashboard/shared';
+import { powerDataSchema, type PowerArea, type PowerData, type PowerHour } from '@nohm/shared';
 import type { Provider } from '../scheduler.js';
 import { enturReverseGeocode } from './entur.js';
 

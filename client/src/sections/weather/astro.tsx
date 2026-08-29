@@ -1,5 +1,5 @@
 import { useEffect, useId, useRef } from 'react';
-import type { WeatherData } from '@personal-dashboard/shared';
+import type { WeatherData } from '@nohm/shared';
 import { motion } from 'motion/react';
 import { moonIllumination, moonPhaseName } from '../../lib/weather';
 import { useSkyNow } from '../../lib/skyTime';

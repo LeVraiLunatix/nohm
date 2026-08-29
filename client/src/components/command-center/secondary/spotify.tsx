@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import type { CommandCenterSlot, SpotifyData } from '@personal-dashboard/shared';
+import type { CommandCenterSlot, SpotifyData } from '@nohm/shared';
 import { NowPlaying, Thumb } from '../../../widgets/SpotifyWidget';
 
 function formatAlbumDuration(durationMs?: number): string | undefined {

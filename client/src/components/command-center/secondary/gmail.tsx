@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import type { CommandCenterSlot, GmailData } from '@personal-dashboard/shared';
+import type { CommandCenterSlot, GmailData } from '@nohm/shared';
 
 /** `"Jane Doe" <jane@example.com>` → `Jane Doe`, falling back to the bare address. */
 function senderName(from: string): string {

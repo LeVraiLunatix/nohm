@@ -6,7 +6,7 @@
 // page a visitor actually clicks around in rather than a single captured frame.
 //
 // One module per source, the same axis as shared/src/schemas/ and the server's providers.
-import type { WidgetEnvelope } from '@personal-dashboard/shared';
+import type { WidgetEnvelope } from '@nohm/shared';
 import { aiUsage } from './ai';
 import { calendar } from './calendar';
 import { clashRoyale } from './clashRoyale';

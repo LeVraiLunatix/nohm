@@ -1,4 +1,4 @@
-import type { WeatherData } from '@personal-dashboard/shared';
+import type { WeatherData } from '@nohm/shared';
 import { motion } from 'motion/react';
 import { PRECIP_COLOR, uvLevel, windCompass } from '../../lib/weather';
 

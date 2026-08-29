@@ -16,6 +16,7 @@ const lockKey = 5_184_227_091;
  * separate short-lived process and never imports this — see `railway.json`.
  */
 export async function migrateDatabase(database: Database): Promise<void> {
+  if (database.mode !== 'postgres' || !database.databaseUrl) return;
   // A one-connection client keeps the session-scoped advisory lock and migration statements on
   // the same PostgreSQL session. The normal application pool remains untouched.
   const migrationDatabase = createDatabase(database.databaseUrl, 1);

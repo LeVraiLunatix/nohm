@@ -1,4 +1,4 @@
-import type { SteamData } from '@personal-dashboard/shared';
+import type { SteamData } from '@nohm/shared';
 import { formatHours, useArtFallback } from './shared';
 import { SteamLibraryStats } from './library';
 

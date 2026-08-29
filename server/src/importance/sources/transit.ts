@@ -1,4 +1,4 @@
-import type { TransitData } from '@personal-dashboard/shared';
+import type { TransitData } from '@nohm/shared';
 
 import type { Candidate } from '../types.js';
 

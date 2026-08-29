@@ -1,5 +1,5 @@
 import { useState, type CSSProperties } from 'react';
-import type { SteamData } from '@personal-dashboard/shared';
+import type { SteamData } from '@nohm/shared';
 import { formatHours } from './shared';
 
 export function SteamFriendsWidget({ data }: Readonly<{ data: SteamData }>) {

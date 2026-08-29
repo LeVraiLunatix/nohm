@@ -2,7 +2,7 @@ import { accessSync, constants, readdirSync } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
-import { iMessageDataSchema, type IMessageConversation, type IMessageData } from '@personal-dashboard/shared';
+import { iMessageDataSchema, type IMessageConversation, type IMessageData } from '@nohm/shared';
 import type { Provider } from '../scheduler.js';
 
 const dbPath = path.join(os.homedir(), 'Library', 'Messages', 'chat.db');

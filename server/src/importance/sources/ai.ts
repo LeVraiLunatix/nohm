@@ -1,4 +1,4 @@
-import type { AiUsageToolData, UsageHistoryPoint } from '@personal-dashboard/shared';
+import type { AiUsageToolData, UsageHistoryPoint } from '@nohm/shared';
 
 import { computeDeviation } from '../../deviation.js';
 import type { Candidate } from '../types.js';

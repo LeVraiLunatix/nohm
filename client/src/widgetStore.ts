@@ -1,8 +1,11 @@
-import type { WidgetEnvelope } from '@personal-dashboard/shared';
+import type { WidgetEnvelope } from '@nohm/shared';
 import { WEATHER_LOCATION_UPDATED_EVENT } from './useDeviceLocation';
+import { GAME_MODE_EVENT } from './gameMode/GameModeProvider';
+import { PREFERENCES_EVENT, readRefreshMultiplier } from './sections/settings/preferences';
 
 const MIN_POLL_MS = 15_000;
 const MAX_POLL_MS = 300_000;
+const GAME_MODE_MAX_POLL_MS = 15 * 60_000;
 const FETCH_TIMEOUT_MS = 60_000;
 
 export interface WidgetSnapshot<T> {
@@ -50,7 +53,9 @@ function setSnapshot(record: WidgetRecord, snapshot: WidgetSnapshot<unknown>): v
 }
 
 function pollDelay(record: WidgetRecord): number {
-  return Math.min(Math.max((record.snapshot.envelope?.refreshMs ?? 60_000) / 2, MIN_POLL_MS), MAX_POLL_MS);
+  const gameMode = document.documentElement.dataset.gameMode === 'true';
+  const multiplier = readRefreshMultiplier() * (gameMode ? 4 : 1);
+  return Math.min(Math.max(((record.snapshot.envelope?.refreshMs ?? 60_000) / 2) * multiplier, MIN_POLL_MS), gameMode ? GAME_MODE_MAX_POLL_MS : MAX_POLL_MS);
 }
 
 function schedulePoll(id: string, record: WidgetRecord): void {
@@ -118,6 +123,7 @@ function connectEvents(): void {
     } catch {
       return;
     }
+    if (document.documentElement.dataset.gameMode === 'true' && id !== 'music-cider') return;
     const record = records.get(id);
     if (record?.started) void readWidget(id);
   });
@@ -161,4 +167,20 @@ window.addEventListener('visibilitychange', () => {
 window.addEventListener(WEATHER_LOCATION_UPDATED_EVENT, () => {
   const weather = records.get('weather');
   if (weather?.started) void readWidget('weather');
+});
+
+window.addEventListener(GAME_MODE_EVENT, () => {
+  records.forEach((record, id) => {
+    if (record.timer !== undefined) window.clearTimeout(record.timer);
+    record.timer = undefined;
+    schedulePoll(id, record);
+  });
+});
+
+window.addEventListener(PREFERENCES_EVENT, () => {
+  records.forEach((record, id) => {
+    if (record.timer !== undefined) window.clearTimeout(record.timer);
+    record.timer = undefined;
+    schedulePoll(id, record);
+  });
 });

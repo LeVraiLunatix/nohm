@@ -1,6 +1,6 @@
 import { useId, useState } from 'react';
 import type { ReactNode } from 'react';
-import type { WeatherData } from '@personal-dashboard/shared';
+import type { WeatherData } from '@nohm/shared';
 import { motion } from 'motion/react';
 import { useWidget } from '../../useWidget';
 import { WidgetBody } from '../../components/WidgetCard';

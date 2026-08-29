@@ -1,4 +1,4 @@
-import type { HueData } from '@personal-dashboard/shared';
+import type { HueData } from '@nohm/shared';
 
 import type { Candidate } from '../types.js';
 

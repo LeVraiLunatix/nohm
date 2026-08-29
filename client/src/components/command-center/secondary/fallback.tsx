@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import type { CommandCenterSlot } from '@personal-dashboard/shared';
+import type { CommandCenterSlot } from '@nohm/shared';
 import { ClaudeIcon, OpenAiIcon } from '../../../sections/ai/ToolIcons';
 
 export function AiToolMark({ accent, className }: Readonly<{ accent: CommandCenterSlot['accent']; className: string }>) {

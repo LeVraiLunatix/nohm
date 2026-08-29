@@ -1,4 +1,4 @@
-import { sonarCloudSchema, type SonarCloudData, type SonarProject, type SonarRating } from '@personal-dashboard/shared';
+import { sonarCloudSchema, type SonarCloudData, type SonarProject, type SonarRating } from '@nohm/shared';
 import type { Provider } from '../scheduler.js';
 
 const SONAR_API_BASE = 'https://sonarcloud.io/api';

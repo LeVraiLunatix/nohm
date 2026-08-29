@@ -1,4 +1,4 @@
-import { valorantMapArt, type ValorantData, type ValorantLiveData } from '@personal-dashboard/shared';
+import { valorantMapArt, type ValorantData, type ValorantLiveData } from '@nohm/shared';
 
 import type { Candidate } from '../types.js';
 import { allShapes } from './shapes.js';

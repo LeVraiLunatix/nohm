@@ -1,5 +1,5 @@
 import Parser from 'rss-parser';
-import { aiNewsSchema, type AiNewsData } from '@personal-dashboard/shared';
+import { aiNewsSchema, type AiNewsData } from '@nohm/shared';
 import type { Provider } from '../scheduler.js';
 import { selectNewsItems } from './news.js';
 

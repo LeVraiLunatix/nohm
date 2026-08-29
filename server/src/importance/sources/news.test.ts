@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { AiNewsData, NewsData } from '@personal-dashboard/shared';
+import type { AiNewsData, NewsData } from '@nohm/shared';
 import { aiNewsCandidates, newsCandidates } from './news.js';
 
 describe('newsCandidates', () => {

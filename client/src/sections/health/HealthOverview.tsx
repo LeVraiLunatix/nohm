@@ -1,10 +1,11 @@
 import { useEffect, useId, useState } from 'react';
-import type { HealthData, HealthDay } from '@personal-dashboard/shared';
+import type { HealthData, HealthDay } from '@nohm/shared';
 import { animate, motion, useMotionValue } from 'motion/react';
 import { CompactActivityRings } from '../../components/ActivityRings';
 import { WidgetBody } from '../../components/WidgetCard';
 import { useWidget } from '../../useWidget';
 import { latestActivityDay } from '../../lib/health';
+import { useI18n } from '../../i18n/I18nProvider';
 
 const STEPS_COLOR = 'var(--color-accent-personal)';
 
@@ -266,12 +267,13 @@ function Vitals({ today, history }: Readonly<{ today: HealthDay; history: Health
 }
 
 export function HealthOverview() {
+  const { t } = useI18n();
   const { envelope, offline } = useWidget<HealthData>('health');
   return (
     <WidgetBody envelope={envelope} offline={offline}>
       {(data) => {
         const today = latestActivityDay(data);
-        if (!today) return <p className="text-sm text-ink-faint">Health data is waiting for its first sync.</p>;
+        if (!today) return <p className="text-sm text-ink-faint">{t('health.firstSync')}</p>;
         const isToday = data.today === today;
         return (
           <div className="grid gap-3 lg:grid-cols-3">

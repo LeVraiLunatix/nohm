@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { motion } from 'motion/react';
-import type { UsageHistoryPoint } from '@personal-dashboard/shared';
+import type { UsageHistoryPoint } from '@nohm/shared';
 
 const W = 100;
 const H = 32;

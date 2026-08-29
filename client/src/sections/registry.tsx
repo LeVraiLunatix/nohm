@@ -1,35 +1,42 @@
-import { useId, type ComponentType, type CSSProperties } from 'react';
+import { lazy, useId, type ComponentType, type CSSProperties } from 'react';
 import { GitHubMark } from '../components/GitHubMark';
 import { CalendarMark } from '../components/CalendarMark';
 import { CLASH_ROYALE_APP_ICON_URL } from '../lib/clashRoyale';
 import { publicAsset } from '../lib/publicAsset';
 import { AiOverview } from './ai/AiOverview';
-import { AiDetail } from './ai/AiDetail';
 import { GitHubOverview } from './github/GitHubOverview';
-import { GitHubDetail } from './github/GitHubDetail';
-import { SpotifyOverview } from './spotify/SpotifyOverview';
-import { SpotifyDetail } from './spotify/SpotifyDetail';
+import { MusicOverview } from './music/MusicOverview';
 import { PersonalOverview } from './personal/PersonalOverview';
-import { PersonalDetail } from './personal/PersonalDetail';
 import { WeatherOverview } from './weather/WeatherOverview';
-import { WeatherDetail } from './weather/WeatherDetail';
 import { HealthOverview } from './health/HealthOverview';
-import { HealthDetail } from './health/HealthDetail';
 import { SteamOverview } from './steam/SteamOverview';
-import { SteamDetail } from './steam/SteamDetail';
 import { ClashRoyaleOverview } from './clashRoyale/ClashRoyaleOverview';
-import { ClashRoyaleDetail } from './clashRoyale/ClashRoyaleDetail';
 import { ValorantOverview } from './valorant/ValorantOverview';
-import { ValorantDetail } from './valorant/ValorantDetail';
+import { SettingsOverview } from './settings/SettingsOverview';
+import type { TranslationKey } from '../i18n/translations';
 
-export const SECTION_IDS = ['ai', 'github', 'spotify', 'personal', 'weather', 'health', 'steam', 'clash-royale', 'valorant'] as const;
+// Detail views load on navigation into a section, not on first paint — the landing page only
+// renders the Overview blocks. Each import() becomes its own chunk, pulled the moment the user
+// opens that section; SectionView wraps them in a <Suspense> boundary.
+const AiDetail = lazy(() => import('./ai/AiDetail').then((m) => ({ default: m.AiDetail })));
+const GitHubDetail = lazy(() => import('./github/GitHubDetail').then((m) => ({ default: m.GitHubDetail })));
+const MusicDetail = lazy(() => import('./music/MusicDetail').then((m) => ({ default: m.MusicDetail })));
+const PersonalDetail = lazy(() => import('./personal/PersonalDetail').then((m) => ({ default: m.PersonalDetail })));
+const WeatherDetail = lazy(() => import('./weather/WeatherDetail').then((m) => ({ default: m.WeatherDetail })));
+const HealthDetail = lazy(() => import('./health/HealthDetail').then((m) => ({ default: m.HealthDetail })));
+const SteamDetail = lazy(() => import('./steam/SteamDetail').then((m) => ({ default: m.SteamDetail })));
+const ClashRoyaleDetail = lazy(() => import('./clashRoyale/ClashRoyaleDetail').then((m) => ({ default: m.ClashRoyaleDetail })));
+const ValorantDetail = lazy(() => import('./valorant/ValorantDetail').then((m) => ({ default: m.ValorantDetail })));
+const SettingsDetail = lazy(() => import('./settings/SettingsDetail').then((m) => ({ default: m.SettingsDetail })));
+
+export const SECTION_IDS = ['ai', 'github', 'spotify', 'personal', 'weather', 'health', 'steam', 'clash-royale', 'valorant', 'settings'] as const;
 export type SectionId = (typeof SECTION_IDS)[number];
 
 export interface SectionDef {
   id: SectionId;
-  title: string;
-  label: string;
-  description: string;
+  titleKey: TranslationKey;
+  labelKey: TranslationKey;
+  descriptionKey: TranslationKey;
   /** Theme variable holding this section's accent color, e.g. '--color-accent-ai'. */
   accentVar: string;
   /** Condensed content for the overview block. */
@@ -43,88 +50,97 @@ export interface SectionDef {
 export const SECTIONS: SectionDef[] = [
   {
     id: 'ai',
-    title: 'AI',
-    label: 'Intelligence',
-    description: 'Usage, pace and context',
+    titleKey: 'section.ai.title',
+    labelKey: 'section.ai.label',
+    descriptionKey: 'section.ai.description',
     accentVar: '--color-accent-ai',
     Overview: AiOverview,
     Detail: AiDetail,
   },
   {
     id: 'github',
-    title: 'GitHub',
-    label: 'Build',
+    titleKey: 'section.github.title',
+    labelKey: 'section.github.label',
     // GitHubOverview renders its own data-driven footer (latest activity + repo health) instead
     // of a static description — see the border-t block at the end of that component.
-    description: '',
+    descriptionKey: 'section.github.description',
     accentVar: '--color-accent-github',
     Overview: GitHubOverview,
     Detail: GitHubDetail,
   },
   {
     id: 'spotify',
-    title: 'Spotify',
-    label: 'Listening',
-    description: 'Now playing and your stats',
+    titleKey: 'section.spotify.title',
+    labelKey: 'section.spotify.label',
+    descriptionKey: 'section.spotify.description',
     accentVar: '--color-accent-spotify',
-    Overview: SpotifyOverview,
-    Detail: SpotifyDetail,
+    Overview: MusicOverview,
+    Detail: MusicDetail,
   },
   {
     id: 'personal',
-    title: 'Personal',
-    label: 'Today',
-    description: 'Calendar, inbox and the rest of your day',
+    titleKey: 'section.personal.title',
+    labelKey: 'section.personal.label',
+    descriptionKey: 'section.personal.description',
     accentVar: '--color-accent-personal',
     Overview: PersonalOverview,
     Detail: PersonalDetail,
   },
   {
     id: 'weather',
-    title: 'Weather',
-    label: 'Sky',
-    description: 'Now, next 12 hours and the week ahead',
+    titleKey: 'section.weather.title',
+    labelKey: 'section.weather.label',
+    descriptionKey: 'section.weather.description',
     accentVar: '--color-accent-weather',
     Overview: WeatherOverview,
     Detail: WeatherDetail,
   },
   {
     id: 'health',
-    title: 'Health',
-    label: 'Wellbeing',
-    description: 'Activity, recovery and trends',
+    titleKey: 'section.health.title',
+    labelKey: 'section.health.label',
+    descriptionKey: 'section.health.description',
     accentVar: '--color-accent-health',
     Overview: HealthOverview,
     Detail: HealthDetail,
   },
   {
     id: 'steam',
-    title: 'Steam',
-    label: 'Games',
-    description: 'Current game, library and achievements',
+    titleKey: 'section.steam.title',
+    labelKey: 'section.steam.label',
+    descriptionKey: 'section.steam.description',
     accentVar: '--color-accent-steam',
     Overview: SteamOverview,
     Detail: SteamDetail,
   },
   {
     id: 'clash-royale',
-    title: 'Clash Royale',
-    label: 'Arena',
-    description: '',
+    titleKey: 'section.clash-royale.title',
+    labelKey: 'section.clash-royale.label',
+    descriptionKey: 'section.clash-royale.description',
     accentVar: '--color-accent-clash-royale',
     Overview: ClashRoyaleOverview,
     Detail: ClashRoyaleDetail,
   },
   {
     id: 'valorant',
-    title: 'Valorant',
-    label: 'Ranked',
+    titleKey: 'section.valorant.title',
+    labelKey: 'section.valorant.label',
     // The homepage card now has a full recent-match list, so an extra generic footer would just
     // spend the space that list needs.
-    description: '',
+    descriptionKey: 'section.valorant.description',
     accentVar: '--color-accent-valorant',
     Overview: ValorantOverview,
     Detail: ValorantDetail,
+  },
+  {
+    id: 'settings',
+    titleKey: 'section.settings.title',
+    labelKey: 'section.settings.label',
+    descriptionKey: 'section.settings.description',
+    accentVar: '--color-accent-settings',
+    Overview: SettingsOverview,
+    Detail: SettingsDetail,
   },
 ];
 
@@ -297,6 +313,13 @@ export function SectionIcon({ id, monochrome = false }: Readonly<{ id: SectionId
       />
     );
   }
+    case 'settings': {
+      return (
+        <svg viewBox="0 0 24 24" aria-hidden className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round">
+          <circle cx="12" cy="12" r="3.25" /><path d="M12 2.8v2.1M12 19.1v2.1M2.8 12h2.1M19.1 12h2.1M5.5 5.5 7 7M17 17l1.5 1.5M18.5 5.5 17 7M7 17l-1.5 1.5" />
+        </svg>
+      );
+    }
   default:
     return (
       <svg viewBox="0 0 24 24" aria-hidden className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">

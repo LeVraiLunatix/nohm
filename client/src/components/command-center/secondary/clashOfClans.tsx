@@ -1,5 +1,5 @@
 import type { CSSProperties, ReactNode } from 'react';
-import type { CommandCenterSlot } from '@personal-dashboard/shared';
+import type { CommandCenterSlot } from '@nohm/shared';
 import {
   CLASH_OF_CLANS_APP_ICON_URL,
   CLASH_OF_CLANS_CAPITAL_GOLD_ICON_URL,

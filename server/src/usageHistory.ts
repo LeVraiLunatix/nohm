@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { usageHistoryPointSchema, type UsageHistoryPoint } from '@personal-dashboard/shared';
+import { usageHistoryPointSchema, type UsageHistoryPoint } from '@nohm/shared';
 import type { Database } from './db/client.js';
 
 const persistedSnapshotSchema = z.object({

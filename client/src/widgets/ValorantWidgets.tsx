@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { isValorantWinRateEligibleMode, type ValorantData, type ValorantMatch } from '@personal-dashboard/shared';
+import { isValorantWinRateEligibleMode, type ValorantData, type ValorantMatch } from '@nohm/shared';
 import { relativeTime } from '../lib/time';
 
 export const RESULT_LABELS: Record<ValorantMatch['result'], string> = {

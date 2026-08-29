@@ -1,5 +1,5 @@
-import type { CalendarData } from '@personal-dashboard/shared';
-import { daysFromNowAt, hhmm } from '@personal-dashboard/shared';
+import type { CalendarData } from '@nohm/shared';
+import { daysFromNowAt, hhmm } from '@nohm/shared';
 
 // ── Calendar — spread across last month/this month/next month so month nav isn't empty ────────
 

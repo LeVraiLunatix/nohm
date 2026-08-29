@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { TransitData } from '@personal-dashboard/shared';
+import type { TransitData } from '@nohm/shared';
 import { transitCandidates } from './transit.js';
 
 describe('transitCandidates', () => {

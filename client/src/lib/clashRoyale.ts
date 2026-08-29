@@ -1,4 +1,4 @@
-import { pathOfLegendsDisplayLeagueNumber, pathOfLegendsLeagueName } from '@personal-dashboard/shared';
+import { pathOfLegendsDisplayLeagueNumber, pathOfLegendsLeagueName } from '@nohm/shared';
 
 /** The game's own app icon — hotlinked the same way as the Steam mark (Wikimedia Commons) and the
  * nav pill's Clash Royale icon (see sections/registry.tsx), which this re-exports for reuse. */

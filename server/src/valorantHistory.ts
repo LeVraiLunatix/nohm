@@ -1,4 +1,4 @@
-import { valorantMatchSchema, valorantSchema, type ValorantData } from '@personal-dashboard/shared';
+import { valorantMatchSchema, valorantSchema, type ValorantData } from '@nohm/shared';
 import { z } from 'zod';
 import type { Database } from './db/client.js';
 

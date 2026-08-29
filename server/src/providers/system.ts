@@ -1,5 +1,5 @@
 import os from 'node:os';
-import { systemSchema, type SystemData } from '@personal-dashboard/shared';
+import { systemSchema, type SystemData } from '@nohm/shared';
 import type { Provider } from '../scheduler.js';
 
 /** Zero-config provider that proves the pipeline; also handy on the dashboard. */
@@ -17,11 +17,7 @@ export function createSystemProvider(timezone: string): Provider<SystemData> {
         nodeVersion: process.version,
         uptimeSeconds: Math.round(process.uptime()),
         timezone,
-        serverTime: new Intl.DateTimeFormat('en-GB', {
-          dateStyle: 'medium',
-          timeStyle: 'medium',
-          timeZone: timezone,
-        }).format(new Date()),
+        serverTime: new Date().toISOString(),
       };
     },
   };

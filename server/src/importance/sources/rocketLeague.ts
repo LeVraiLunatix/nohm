@@ -1,4 +1,4 @@
-import type { RocketLeagueLiveData } from '@personal-dashboard/shared';
+import type { RocketLeagueLiveData } from '@nohm/shared';
 
 import type { Candidate } from '../types.js';
 import { allShapes } from './shapes.js';

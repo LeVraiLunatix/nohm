@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import type { CommandCenterSlot, GitHubData } from '@personal-dashboard/shared';
+import type { CommandCenterSlot, GitHubData } from '@nohm/shared';
 import { relativeTime } from '../../../lib/time';
 import { ContributionGrid } from '../../../widgets/GitHubWidgets';
 

@@ -4,6 +4,7 @@ import { accentStyle, SectionIcon, type SectionDef, type SectionId } from './reg
 import { SECTION_MORPH_TRANSITION } from './transitions';
 import { sectionHref } from '../router';
 import { publicAsset } from '../lib/publicAsset';
+import { useI18n } from '../i18n/I18nProvider';
 
 export const sectionCardVariants = {
   hidden: { opacity: 0, y: 12 },
@@ -39,12 +40,15 @@ function openSection(section: SectionDef): void {
 /** Overview block for one section — the whole card is a link into the section's full view. */
 export function SectionCard({ section }: Readonly<{ section: SectionDef }>) {
   const wordmark = SECTION_WORDMARKS[section.id];
+  const { t } = useI18n();
+  const title = t(section.titleKey);
+  const description = t(section.descriptionKey);
 
   return (
     <motion.div
       role="link"
       tabIndex={0}
-      aria-label={`Open ${section.title}`}
+      aria-label={t('nav.open', { name: title })}
       onClick={(event: MouseEvent<HTMLElement>) => {
         if (!interactiveTarget(event.target)) openSection(section);
       }}
@@ -74,7 +78,7 @@ export function SectionCard({ section }: Readonly<{ section: SectionDef }>) {
               transition={SECTION_MORPH_TRANSITION}
               className="sr-only"
             >
-              {section.title}
+              {title}
             </motion.h2>
             <img
               src={wordmark.src}
@@ -93,7 +97,7 @@ export function SectionCard({ section }: Readonly<{ section: SectionDef }>) {
               transition={SECTION_MORPH_TRANSITION}
               className="min-w-0 text-[1.05rem] font-semibold tracking-[-0.02em] text-ink"
             >
-              {section.title}
+              {title}
             </motion.h2>
           </>
         )}
@@ -104,9 +108,9 @@ export function SectionCard({ section }: Readonly<{ section: SectionDef }>) {
       <div className="relative section-card-content">
         <section.Overview />
       </div>
-      {section.description && (
+      {description && (
         <p className="relative mt-5 border-t border-card-border pt-4 text-xs text-ink-faint">
-          {section.description}
+          {description}
         </p>
       )}
     </motion.div>

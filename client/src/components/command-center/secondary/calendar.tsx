@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import type { CalendarData, CommandCenterSlot } from '@personal-dashboard/shared';
+import type { CalendarData, CommandCenterSlot } from '@nohm/shared';
 import { formatEventDate } from '../../../lib/time';
 
 function formatEventDay(event: CalendarData['events'][number]): string {

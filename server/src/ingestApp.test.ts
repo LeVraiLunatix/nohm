@@ -1,7 +1,7 @@
 import { createHmac } from 'node:crypto';
 import type { AddressInfo } from 'node:net';
 import type { Server } from 'node:http';
-import type { HealthIngest } from '@personal-dashboard/shared';
+import type { HealthIngest } from '@nohm/shared';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { createIngestApp, tokenMatches, type HealthIngestSink } from './ingestApp.js';
 

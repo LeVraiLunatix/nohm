@@ -1,4 +1,4 @@
-import type { SpotifyData } from '@personal-dashboard/shared';
+import type { SpotifyData } from '@nohm/shared';
 import { useWidget } from '../../useWidget';
 import { WidgetBody } from '../../components/WidgetCard';
 import './spotify.css';

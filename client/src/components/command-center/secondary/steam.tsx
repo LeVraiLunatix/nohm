@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import type { CommandCenterSlot, SteamData } from '@personal-dashboard/shared';
+import type { CommandCenterSlot, SteamData } from '@nohm/shared';
 import { useArtFallback } from '../../../widgets/steam/shared';
 
 function formatSteamHours(minutes: number): string {

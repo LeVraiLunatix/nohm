@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import type { CommandCenterSlot, SpotifyData } from '@personal-dashboard/shared';
+import type { CommandCenterSlot, SpotifyData } from '@nohm/shared';
 import { useWidget } from '../useWidget';
 import { StaleBadge, WidgetBody, WidgetShell } from '../components/WidgetCard';
 import { relativeTime } from '../lib/time';

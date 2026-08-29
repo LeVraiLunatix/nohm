@@ -1,4 +1,4 @@
-import type { HealthData, HealthDay } from '@personal-dashboard/shared';
+import type { HealthData, HealthDay } from '@nohm/shared';
 import { WidgetBody, WidgetShell } from '../../components/WidgetCard';
 import { relativeTime } from '../../lib/time';
 import { latestActivityDay } from '../../lib/health';

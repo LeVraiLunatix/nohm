@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import type { SteamAchievement, SteamData, SteamGame } from '@personal-dashboard/shared';
+import type { SteamAchievement, SteamData, SteamGame } from '@nohm/shared';
 import { useWidget } from '../../useWidget';
 import { WidgetBody } from '../../components/WidgetCard';
 import { relativeTime } from '../../lib/time';

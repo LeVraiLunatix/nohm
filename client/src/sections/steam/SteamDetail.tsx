@@ -1,4 +1,4 @@
-import type { SteamData } from '@personal-dashboard/shared';
+import type { SteamData } from '@nohm/shared';
 import { useWidget } from '../../useWidget';
 import { WidgetBody, WidgetShell } from '../../components/WidgetCard';
 import {

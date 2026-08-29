@@ -1,5 +1,5 @@
 import { ZodError, type ZodType } from 'zod';
-import type { WidgetEnvelope, WidgetStatus, WidgetSummary } from '@personal-dashboard/shared';
+import type { WidgetEnvelope, WidgetStatus, WidgetSummary } from '@nohm/shared';
 
 export interface Provider<T = unknown> {
   id: string;
@@ -41,6 +41,12 @@ export class ProviderScheduler {
   private readonly entries = new Map<string, Entry>();
   private readonly settledListeners = new Set<(id: string) => void>();
   private running = false;
+  private gameMode = false;
+  private readonly gameModeEssential = new Set(['music-cider', 'spotify', 'system']);
+
+  setGameMode(active: boolean): void {
+    this.gameMode = active;
+  }
 
   register(provider: Provider): void {
     if (this.entries.has(provider.id)) {
@@ -61,7 +67,7 @@ export class ProviderScheduler {
       void this.hydrateAndRefresh(entry);
       if (entry.provider.nextRefreshMs) continue;
       entry.timer = setInterval(
-        () => void this.refresh(entry.provider.id),
+        () => void this.refresh(entry.provider.id, false, true),
         entry.provider.refreshMs,
       );
       entry.timer.unref?.();
@@ -91,9 +97,10 @@ export class ProviderScheduler {
   }
 
   /** Single-flight: a refresh while the previous one is running is a no-op. `force` is passed through for user-initiated refreshes. */
-  refresh(id: string, force = false): Promise<void> {
+  refresh(id: string, force = false, scheduled = false): Promise<void> {
     const entry = this.entries.get(id);
     if (!entry || entry.status === 'disabled') return Promise.resolve();
+    if (scheduled && this.gameMode && !this.gameModeEssential.has(id)) return Promise.resolve();
     if (entry.inFlight) return entry.refreshPromise ?? Promise.resolve();
 
     entry.inFlight = true;
@@ -146,7 +153,7 @@ export class ProviderScheduler {
     if (entry.timer) clearTimeout(entry.timer);
     const delayMs = entry.provider.nextRefreshMs(entry.data);
     entry.timer = setTimeout(
-      () => void this.refresh(entry.provider.id),
+      () => void this.refresh(entry.provider.id, false, true),
       Math.max(1_000, delayMs),
     );
     entry.timer.unref?.();

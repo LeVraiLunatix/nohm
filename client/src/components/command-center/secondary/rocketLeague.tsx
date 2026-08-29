@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import type { CommandCenterSlot } from '@personal-dashboard/shared';
+import type { CommandCenterSlot } from '@nohm/shared';
 import { GameActivityText } from './gameActivity';
 
 const ROCKET_LEAGUE_ART_URL = 'https://cdn.akamai.steamstatic.com/steam/apps/252950/header.jpg';

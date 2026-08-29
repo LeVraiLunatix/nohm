@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import type { CommandCenterSlot, HealthData } from '@personal-dashboard/shared';
+import type { CommandCenterSlot, HealthData } from '@nohm/shared';
 import { activitySyncContext, latestActivityDay } from '../../../lib/health';
 import { ActivityRings } from '../../ActivityRings';
 

@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import type { CommandCenterSlot, WeatherData } from '@personal-dashboard/shared';
+import type { CommandCenterSlot, WeatherData } from '@nohm/shared';
 import { UvGauge, WindGauge } from '../../../sections/weather/WeatherOverview';
 import { deg, glyph } from '../../../lib/weather';
 

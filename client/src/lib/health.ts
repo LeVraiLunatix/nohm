@@ -1,4 +1,4 @@
-import type { HealthData, HealthDay } from '@personal-dashboard/shared';
+import type { HealthData, HealthDay } from '@nohm/shared';
 
 /** Ignore placeholder daily rows created by a partial Shortcut run with no usable readings. */
 export function hasActivityData(day: HealthDay): boolean {

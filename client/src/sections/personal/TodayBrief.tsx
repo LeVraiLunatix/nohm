@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useState } from 'react';
-import type { CalendarData, GitHubData, GmailData, WeatherData } from '@personal-dashboard/shared';
+import type { CalendarData, GitHubData, GmailData, WeatherData } from '@nohm/shared';
 import { useWidget } from '../../useWidget';
 import { deg, glyph } from '../../lib/weather';
 
-const SNAPSHOT_KEY = 'personal-dashboard:today-brief';
+const SNAPSHOT_KEY = 'nohm:today-brief';
+const LEGACY_SNAPSHOT_KEY = 'personal-dashboard:today-brief';
 
 interface BriefSnapshot {
   capturedAt: string;
@@ -31,7 +32,7 @@ function toneClass(tone: BriefLine['tone']): string {
 
 function readSnapshot(): BriefSnapshot | null {
   try {
-    const saved = localStorage.getItem(SNAPSHOT_KEY);
+    const saved = localStorage.getItem(SNAPSHOT_KEY) ?? localStorage.getItem(LEGACY_SNAPSHOT_KEY);
     if (!saved) return null;
     const parsed = JSON.parse(saved) as BriefSnapshot;
     return Array.isArray(parsed.calendarIds) && Array.isArray(parsed.activityIds) ? parsed : null;

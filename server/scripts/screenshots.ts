@@ -16,7 +16,7 @@ import { fileURLToPath } from 'node:url';
 import { chromium, type Page as PlaywrightPage } from 'playwright';
 import { PNG } from 'pngjs';
 import pixelmatch from 'pixelmatch';
-import type { WidgetEnvelope } from '@personal-dashboard/shared';
+import type { WidgetEnvelope } from '@nohm/shared';
 import { rankCandidates } from '../src/importance/rank.js';
 import {
   aiCandidates,

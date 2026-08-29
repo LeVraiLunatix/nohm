@@ -1,4 +1,4 @@
-import type { WidgetEnvelope } from '@personal-dashboard/shared';
+import type { WidgetEnvelope } from '@nohm/shared';
 
 export const fallbackArt = (seed: string) => `https://picsum.photos/seed/${seed}/300/300`;
 

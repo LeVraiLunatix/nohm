@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { ValorantData, ValorantLiveData } from '@personal-dashboard/shared';
+import type { ValorantData, ValorantLiveData } from '@nohm/shared';
 import { valorantCandidates } from './valorant.js';
 
 const NOW = Date.parse('2026-08-21T22:00:00.000Z');

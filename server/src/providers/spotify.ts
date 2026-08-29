@@ -1,4 +1,4 @@
-import { spotifySchema, type SpotifyData } from '@personal-dashboard/shared';
+import { spotifySchema, type SpotifyData } from '@nohm/shared';
 import { readSpotifyToken, writeSpotifyToken } from '../spotifyToken.js';
 import { SpotifySnapshotStore } from '../spotifyCache.js';
 import { SpotifyHistoryStore, type AlbumDetailInput, type PlayedTrackInput } from '../spotifyHistory/index.js';

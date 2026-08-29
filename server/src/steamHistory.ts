@@ -1,4 +1,4 @@
-import type { SteamPlaytimeHistoryPoint } from '@personal-dashboard/shared';
+import type { SteamPlaytimeHistoryPoint } from '@nohm/shared';
 import type { Database } from './db/client.js';
 
 interface HistoryRow {

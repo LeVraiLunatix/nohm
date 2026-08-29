@@ -3,7 +3,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { readFile, stat } from 'node:fs/promises';
 import { promisify } from 'node:util';
-import { activityPushSchema, clashRoyaleSchema, type ActivityPushData, type ClashRoyaleData } from '@personal-dashboard/shared';
+import { activityPushSchema, clashRoyaleSchema, type ActivityPushData, type ClashRoyaleData } from '@nohm/shared';
 import type { Provider } from '../scheduler.js';
 import { jsonlFiles } from './aiUsage/index.js';
 import { readValorantLive } from './valorantPresence.js';

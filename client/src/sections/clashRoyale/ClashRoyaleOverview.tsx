@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import type { ClashRoyaleData } from '@personal-dashboard/shared';
+import type { ClashRoyaleData } from '@nohm/shared';
 import { useWidget } from '../../useWidget';
 import { WidgetBody } from '../../components/WidgetCard';
 import { ClashRoyaleBattlePulse, ClashRoyaleDeck, ClashRoyaleProfile } from '../../widgets/ClashRoyaleWidgets';

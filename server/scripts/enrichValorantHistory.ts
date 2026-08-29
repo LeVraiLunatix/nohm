@@ -10,7 +10,7 @@ import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { z } from 'zod';
-import type { ValorantMatch } from '@personal-dashboard/shared';
+import type { ValorantMatch } from '@nohm/shared';
 import { createDatabase } from '../src/db/client.js';
 import { mapMatch, mergeMatches } from '../src/providers/valorant.js';
 import { ValorantHistoryStore, type ValorantHistoryCache } from '../src/valorantHistory.js';

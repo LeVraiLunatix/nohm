@@ -1,4 +1,4 @@
-import type { CalendarData, CommandCenterData, HealthData } from '@personal-dashboard/shared';
+import type { CalendarData, CommandCenterData, HealthData } from '@nohm/shared';
 
 // ── Command center (hand-composed hero/secondary/tiles referencing the fixtures above) ─────────
 
@@ -35,7 +35,7 @@ export function commandCenter(now: Date, cal: CalendarData, hlth: HealthData): C
       },
       {
         id: 'github:contributions', source: 'github', kind: 'github', kicker: 'GitHub', title: '3 commits today',
-        detail: 'personal-dashboard', href: '#/github', score: 75, render: { type: 'github-contributions' },
+        detail: 'nohm', href: '#/github', score: 75, render: { type: 'github-contributions' },
       },
       {
         id: 'ai-usage:claude', source: 'ai-usage', kind: 'ai-usage', kicker: 'Claude', title: '96% of 5h window',

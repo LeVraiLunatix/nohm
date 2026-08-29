@@ -13,13 +13,19 @@ export default defineConfig({
     tailwindcss(),
     VitePWA({
       registerType: 'autoUpdate',
+      workbox: {
+        // `SlotGallery` is the dev-only `?dev=gallery` inspector — kept in the build so it works
+        // on a deployed demo, but no reason to precache it into every install.
+        globIgnores: ['**/SlotGallery-*.js'],
+      },
       manifest: {
-        name: 'Personal Dashboard',
-        short_name: 'Dashboard',
-        description: 'Life, GitHub, and AI usage at a glance',
+        name: 'Nohm',
+        short_name: 'Nohm',
+        description: 'Votre centre de contrôle personnel, local et rapide',
+        lang: 'fr',
         display: 'standalone',
         background_color: '#05070d',
-        theme_color: '#05070d',
+        theme_color: '#111119',
         icons: [
           {
             src: 'icon-192.png',
@@ -37,6 +43,24 @@ export default defineConfig({
       },
     }),
   ],
+  build: {
+    rollupOptions: {
+      output: {
+        // React and the animation library are large and change far less often than app code —
+        // giving each its own chunk keeps a normal deploy from busting their cache for every
+        // returning PWA client (the service worker re-downloads only what actually changed).
+        manualChunks(id) {
+          if (/node_modules[/\\](motion|motion-dom|motion-utils|framer-motion)[/\\]/.test(id)) {
+            return 'motion';
+          }
+          if (/node_modules[/\\](react|react-dom|scheduler)[/\\]/.test(id)) {
+            return 'react';
+          }
+          return undefined;
+        },
+      },
+    },
+  },
   server: {
     host: true,
     // Tailscale Serve forwards the dashboard's HTTPS hostname to this local dev server.

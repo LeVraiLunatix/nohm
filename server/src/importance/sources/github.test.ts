@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { GitHubData } from '@personal-dashboard/shared';
+import type { GitHubData } from '@nohm/shared';
 import { githubCandidates } from './github.js';
 
 describe('githubCandidates', () => {

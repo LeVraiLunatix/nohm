@@ -1,4 +1,4 @@
-import { pathOfLegendsDisplayLeagueNumber, pathOfLegendsLeagueName, type ClashRoyaleBattle, type ClashRoyaleData } from '@personal-dashboard/shared';
+import { pathOfLegendsDisplayLeagueNumber, pathOfLegendsLeagueName, type ClashRoyaleBattle, type ClashRoyaleData } from '@nohm/shared';
 import { useEffect, useState } from 'react';
 import { relativeTime } from '../lib/time';
 import { CLASH_ROYALE_BATTLE_ART, clashRoyaleBattleIcon, clashRoyaleLeagueArt } from '../lib/clashRoyale';

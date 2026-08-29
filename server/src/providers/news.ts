@@ -1,10 +1,8 @@
 import Parser from 'rss-parser';
-import { newsSchema, type NewsData } from '@personal-dashboard/shared';
+import { newsSchema, type NewsData } from '@nohm/shared';
 import type { Provider } from '../scheduler.js';
 
 const MAX_ITEMS = 12;
-
-type NewsItem = NewsData['items'][number];
 
 export interface NewsFeed {
   name: string;

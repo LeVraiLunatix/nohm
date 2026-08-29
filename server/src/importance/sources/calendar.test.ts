@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { CalendarData } from '@personal-dashboard/shared';
+import type { CalendarData } from '@nohm/shared';
 import { calendarCandidates } from './calendar.js';
 
 describe('calendarCandidates', () => {

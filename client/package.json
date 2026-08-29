@@ -1,5 +1,5 @@
 {
-  "name": "@personal-dashboard/client",
+  "name": "@nohm/client",
   "private": true,
   "version": "0.1.0",
   "type": "module",
@@ -8,10 +8,11 @@
     "build": "vite build",
     "build:demo": "vite build --mode demo",
     "preview": "vite preview",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "assets:optimize": "node scripts/optimize-assets.mjs"
   },
   "dependencies": {
-    "@personal-dashboard/shared": "*",
+    "@nohm/shared": "*",
     "motion": "^12.42.2",
     "react": "^19.1.0",
     "react-dom": "^19.1.0"
@@ -21,6 +22,7 @@
     "@types/react": "^19.1.0",
     "@types/react-dom": "^19.1.0",
     "@vitejs/plugin-react": "^4.6.0",
+    "sharp": "^0.35.4",
     "tailwindcss": "^4.1.0",
     "typescript": "^5.9.0",
     "vite": "^7.0.0",

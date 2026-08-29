@@ -42,7 +42,7 @@ async function provisionUsername(accessToken: string): Promise<string> {
   const userRes = await fetch(`${REMOTE_API}/route/api`, {
     method: 'POST',
     headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ devicetype: 'personal-dashboard' }),
+    body: JSON.stringify({ devicetype: 'nohm' }),
   });
   if (!userRes.ok) throw new Error(`username registration failed: ${userRes.status}`);
   const json = (await userRes.json()) as Array<{ success?: { username?: string } }>;

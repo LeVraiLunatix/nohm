@@ -1,5 +1,5 @@
-import type { SteamData } from '@personal-dashboard/shared';
-import { dateDaysAgo, iso, mulberry32 } from '@personal-dashboard/shared';
+import type { SteamData } from '@nohm/shared';
+import { dateDaysAgo, iso, mulberry32 } from '@nohm/shared';
 
 // ── Steam ────────────────────────────────────────────────────────────────────────────────────
 

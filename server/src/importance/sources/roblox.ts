@@ -1,4 +1,4 @@
-import type { RobloxData } from '@personal-dashboard/shared';
+import type { RobloxData } from '@nohm/shared';
 
 import type { Candidate } from '../types.js';
 

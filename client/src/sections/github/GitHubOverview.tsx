@@ -1,5 +1,5 @@
 import { useMemo, type ReactNode } from 'react';
-import type { GitHubData } from '@personal-dashboard/shared';
+import type { GitHubData } from '@nohm/shared';
 import { useWidget } from '../../useWidget';
 import { WidgetBody } from '../../components/WidgetCard';
 import { rampColor } from '../../lib/contributions';

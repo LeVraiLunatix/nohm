@@ -1,5 +1,5 @@
 {
-  "name": "@personal-dashboard/shared",
+  "name": "@nohm/shared",
   "private": true,
   "version": "0.1.0",
   "type": "module",

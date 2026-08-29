@@ -1,5 +1,5 @@
-import type { HealthData } from '@personal-dashboard/shared';
-import { dateDaysAgo, healthDayFor, iso, mulberry32 } from '@personal-dashboard/shared';
+import type { HealthData } from '@nohm/shared';
+import { dateDaysAgo, healthDayFor, iso, mulberry32 } from '@nohm/shared';
 
 // ── Health ───────────────────────────────────────────────────────────────────────────────────
 

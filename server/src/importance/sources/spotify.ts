@@ -1,4 +1,4 @@
-import type { SpotifyData } from '@personal-dashboard/shared';
+import type { SpotifyData } from '@nohm/shared';
 
 import type { Candidate } from '../types.js';
 import { allShapes } from './shapes.js';

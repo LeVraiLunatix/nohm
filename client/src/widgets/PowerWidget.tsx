@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import type { PowerData, PowerHour } from '@personal-dashboard/shared';
+import type { PowerData, PowerHour } from '@nohm/shared';
 import { useWidget } from '../useWidget';
 import { WidgetCard } from '../components/WidgetCard';
 

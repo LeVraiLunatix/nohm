@@ -1,4 +1,4 @@
-import type { WeatherData } from '@personal-dashboard/shared';
+import type { WeatherData } from '@nohm/shared';
 import { WidgetBody, WidgetShell } from '../../components/WidgetCard';
 import { SystemFooter } from '../../components/SystemFooter';
 import { useWidget } from '../../useWidget';

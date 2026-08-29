@@ -1,4 +1,4 @@
-import type { WidgetStatus } from '@personal-dashboard/shared';
+import type { WidgetStatus } from '@nohm/shared';
 
 import type { Candidate } from '../types.js';
 

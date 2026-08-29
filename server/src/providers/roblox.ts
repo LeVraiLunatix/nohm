@@ -1,4 +1,4 @@
-import { robloxSchema, type RobloxData } from '@personal-dashboard/shared';
+import { robloxSchema, type RobloxData } from '@nohm/shared';
 import type { Provider } from '../scheduler.js';
 
 export interface RobloxAuth {

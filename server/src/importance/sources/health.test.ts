@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { HealthData } from '@personal-dashboard/shared';
+import type { HealthData } from '@nohm/shared';
 import { healthCandidates } from './health.js';
 
 describe('healthCandidates', () => {

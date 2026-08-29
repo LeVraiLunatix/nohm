@@ -9,7 +9,7 @@ import {
   type SpotifyData,
   type SteamData,
   type WeatherData,
-} from '@personal-dashboard/shared';
+} from '@nohm/shared';
 import type { AiUsageByTool } from '../../components/command-center/useCommandCenterData';
 import { aiUsage } from './ai';
 import { calendar } from './calendar';
@@ -191,7 +191,7 @@ export function buildGallerySlots(data: GalleryData, now: Date): GallerySlot[] {
       slot: {
         id: 'gallery:github-reviews', source: 'github', kind: 'github', kicker: '1 review requested',
         title: data.github.pullRequests.find((pr) => pr.role === 'review-requested')?.title ?? 'Review requested',
-        detail: 'personal-dashboard', href: '#/github', score: 50, render: { type: 'github-reviews' },
+        detail: 'nohm', href: '#/github', score: 50, render: { type: 'github-reviews' },
       },
     },
     {
@@ -199,17 +199,17 @@ export function buildGallerySlots(data: GalleryData, now: Date): GallerySlot[] {
       slot: {
         id: 'gallery:github-open-prs', source: 'github', kind: 'github', kicker: '1 open pull request',
         title: data.github.pullRequests.find((pr) => pr.role === 'author' && !pr.draft)?.title ?? 'Open pull request',
-        detail: 'personal-dashboard', href: '#/github', score: 50, render: { type: 'github-open-prs' },
+        detail: 'nohm', href: '#/github', score: 50, render: { type: 'github-open-prs' },
       },
     },
     {
       label: 'sonar-quality-gate (passed)',
       slot: {
         id: 'gallery:sonar:passed', source: 'sonar', kind: 'sonar', kicker: 'SonarCloud Quality Gate',
-        title: 'personal-dashboard', detail: 'SonarCloud', href: '#/github', score: 50,
+        title: 'nohm', detail: 'SonarCloud', href: '#/github', score: 50,
         render: {
           type: 'sonar-quality-gate', status: 'passed',
-          projects: [{ key: 'personal-dashboard', name: 'personal-dashboard', security: 'A', reliability: 'A', maintainability: 'A', vulnerabilitiesCount: 0, bugsCount: 0, codeSmellsCount: 12 }],
+          projects: [{ key: 'nohm', name: 'nohm', security: 'A', reliability: 'A', maintainability: 'A', vulnerabilitiesCount: 0, bugsCount: 0, codeSmellsCount: 12 }],
         },
       },
     },

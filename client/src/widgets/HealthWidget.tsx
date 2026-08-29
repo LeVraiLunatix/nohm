@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import type { HealthData, HealthDay } from '@personal-dashboard/shared';
+import type { HealthData, HealthDay } from '@nohm/shared';
 import { ActivityRings } from '../components/ActivityRings';
 import { useWidget } from '../useWidget';
 import { WidgetCard } from '../components/WidgetCard';

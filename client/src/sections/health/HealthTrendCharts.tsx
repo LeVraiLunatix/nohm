@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import type { HealthData, HealthDay } from '@personal-dashboard/shared';
+import type { HealthData, HealthDay } from '@nohm/shared';
 
 const W = 100;
 const H = 36;

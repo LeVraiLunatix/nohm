@@ -1,5 +1,5 @@
-import type { AiUsageToolData } from '@personal-dashboard/shared';
-import { usageHistoryFor } from '@personal-dashboard/shared';
+import type { AiUsageToolData } from '@nohm/shared';
+import { usageHistoryFor } from '@nohm/shared';
 
 // ── AI usage (Claude / Codex) ────────────────────────────────────────────────────────────────
 

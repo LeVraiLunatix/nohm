@@ -22,7 +22,27 @@ const TEMPORAL_OIDS = [1184, 1082, 1083, 1114, 1182, 1185, 1115, 1231];
 /** json and jsonb: serialize only, so a string we already stringified is sent as-is. */
 const JSON_OIDS = [114, 3802];
 
-export function createDatabase(databaseUrl: string, max = 5) {
+export interface Database {
+  client: postgres.Sql;
+  databaseUrl?: string;
+  mode: 'postgres' | 'memory';
+}
+
+function createMemoryClient(): postgres.Sql {
+  const query = (async () => []) as unknown as postgres.Sql;
+  query.begin = (async (callback: (sql: postgres.Sql) => unknown) => callback(query)) as unknown as postgres.Sql['begin'];
+  query.end = (async () => undefined) as postgres.Sql['end'];
+  query.notify = (async () => '') as unknown as postgres.Sql['notify'];
+  query.listen = (async (_channel: string, _onNotify: (payload: string) => void, onListen?: () => void) => {
+    onListen?.();
+    return { state: 'closed', unlisten: async () => undefined };
+  }) as unknown as postgres.Sql['listen'];
+  query.unsafe = (async () => []) as unknown as postgres.Sql['unsafe'];
+  return query;
+}
+
+export function createDatabase(databaseUrl?: string, max = 5): Database {
+  if (!databaseUrl) return { client: createMemoryClient(), mode: 'memory' };
   const client = postgres(databaseUrl, {
     max,
     connect_timeout: 10,
@@ -37,7 +57,5 @@ export function createDatabase(databaseUrl: string, max = 5) {
   for (const oid of JSON_OIDS) {
     client.options.serializers[oid] = passThrough;
   }
-  return { client, databaseUrl };
+  return { client, databaseUrl, mode: 'postgres' };
 }
-
-export type Database = ReturnType<typeof createDatabase>;
