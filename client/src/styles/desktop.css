@@ -21,6 +21,13 @@
     grid-column: span 12;
   }
 
+  /* Unlike the other sections, Settings has no per-section CSS file (its styles live in
+     index.css), so its overview span belongs here with ai/github/personal/health rather
+     than defaulting to a single 1/12 column. */
+  .dashboard-section-card--settings {
+    grid-column: span 12;
+  }
+
   .personal-overview {
     grid-template-columns: repeat(12, minmax(0, 1fr));
     column-gap: 2rem;
