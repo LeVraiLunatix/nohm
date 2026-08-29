@@ -197,7 +197,12 @@ app.put('/api/settings/services/:serviceId', async (req, res) => {
     res.status(404).json({ error: 'unknown-service' });
     return;
   }
-  const parsed = serviceSettingsSchemas[serviceId].safeParse(req.body);
+  // Merge onto what's already stored so a partial save keeps the fields it left out — the
+  // client only sends the fields the user actually typed, so you can change a Riot ID or a
+  // player tag without re-pasting the API key that never leaves the server.
+  const incoming = req.body && typeof req.body === 'object' ? (req.body as Record<string, unknown>) : {};
+  const merged = { ...serviceSettingsStore.get(serviceId), ...incoming };
+  const parsed = serviceSettingsSchemas[serviceId].safeParse(merged);
   if (!parsed.success) {
     res.status(400).json({ error: 'invalid-service-settings' });
     return;

@@ -23,10 +23,13 @@ export function SettingsDetail() {
   const [editing, setEditing] = useState<ServiceDefinition | null>(null);
   const [values, setValues] = useState<Record<string, string>>({});
   const [saveState, setSaveState] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
+  const [locating, setLocating] = useState(false);
+  const [locationMsg, setLocationMsg] = useState<string | null>(null);
   const [wizard, setWizard] = useState(false);
   const [visibleSections, setVisibleSections] = useState(readVisibleSections);
   const [refreshMultiplier, setRefreshMultiplier] = useState(readRefreshMultiplier);
   const { shortcut, setShortcut } = useGameMode();
+  const editingConfigured = editing ? configured.includes(editing.id) : false;
 
   useEffect(() => {
     void fetch('/api/widgets').then((response) => response.ok ? response.json() : { widgets: [] }).then((payload) => setSummaries(payload.widgets ?? [])).catch(() => setSummaries([]));
@@ -37,12 +40,46 @@ export function SettingsDetail() {
     setEditing(service);
     setValues(Object.fromEntries((service.fields ?? []).map((field) => [field.key, field.type === 'checkbox' ? '0' : ''])));
     setSaveState('idle');
+    setLocationMsg(null);
+  };
+
+  const detectMyLocation = async () => {
+    if (!('geolocation' in navigator)) { setLocationMsg(t('settings.locationDenied')); return; }
+    setLocating(true);
+    setLocationMsg(null);
+    try {
+      const position = await new Promise<GeolocationPosition>((resolve, reject) => {
+        navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 10_000, maximumAge: 5 * 60_000 });
+      });
+      const lat = position.coords.latitude;
+      const lon = position.coords.longitude;
+      const response = await fetch('/api/settings/services/weather', {
+        method: 'PUT',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ WEATHER_LAT: lat.toFixed(5), WEATHER_LON: lon.toFixed(5) }),
+      });
+      if (!response.ok) throw new Error('save failed');
+      // Also push it to the running provider so weather refreshes now, not only after a restart.
+      void fetch('/api/weather/location', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ lat, lon }),
+      });
+      setConfigured((current) => current.includes('weather') ? current : [...current, 'weather']);
+      setLocationMsg(t('settings.locationSet', { coords: `${lat.toFixed(3)}, ${lon.toFixed(3)}` }));
+    } catch {
+      setLocationMsg(t('settings.locationDenied'));
+    } finally {
+      setLocating(false);
+    }
   };
 
   const saveConnection = async () => {
     if (!editing) return;
-    setSaveState('saving');
     const payload = Object.fromEntries(Object.entries(values).filter(([, value]) => value !== ''));
+    // Editing an already-connected service and nothing was typed: nothing to change.
+    if (editingConfigured && Object.keys(payload).length === 0) { setEditing(null); return; }
+    setSaveState('saving');
     try {
       const response = await fetch(`/api/settings/services/${encodeURIComponent(editing.id)}`, { method: 'PUT', headers: { 'content-type': 'application/json' }, body: JSON.stringify(payload) });
       if (!response.ok) throw new Error('save failed');
@@ -138,16 +175,17 @@ export function SettingsDetail() {
                 </label>
               ) : (
                 <label className="connection-field" key={field.key}>
-                  <span>{field.label[locale]}{field.optional ? '' : ' *'}</span>
-                  <input required={!field.optional} type={field.type ?? 'text'} placeholder={field.placeholder} value={values[field.key] ?? ''} autoComplete={field.type === 'password' ? 'new-password' : 'off'} onChange={(event) => setValues((current) => ({ ...current, [field.key]: event.target.value }))} />
+                  <span>{field.label[locale]}{field.optional || editingConfigured ? '' : ' *'}</span>
+                  <input required={!field.optional && !editingConfigured} type={field.type ?? 'text'} placeholder={editingConfigured ? t('settings.fieldSaved') : field.placeholder} value={values[field.key] ?? ''} autoComplete={field.type === 'password' ? 'new-password' : 'off'} onChange={(event) => setValues((current) => ({ ...current, [field.key]: event.target.value }))} />
                 </label>
               ))}
             </div>
             <div className="connection-actions">
-              <p className={`connection-feedback connection-feedback--${saveState}`} role="status">
-                {saveState === 'saved' ? t('settings.savedRestart') : saveState === 'error' ? t('settings.saveError') : t('settings.encryptedHint')}
+              <p className={`connection-feedback connection-feedback--${locationMsg ? 'saved' : saveState}`} role="status">
+                {locationMsg ?? (saveState === 'saved' ? t('settings.savedRestart') : saveState === 'error' ? t('settings.saveError') : t('settings.encryptedHint'))}
               </p>
               <div className="connection-actions__buttons">
+                {editing.id === 'weather' && <button type="button" className="settings-button settings-button--ghost" disabled={locating} onClick={() => void detectMyLocation()}>{locating ? t('settings.locating') : t('settings.useLocation')}</button>}
                 {editing.oauth && <button type="button" className="settings-button settings-button--ghost" disabled={!oauthReady.includes(editing.oauth)} onClick={() => window.open(`/api/settings/oauth/${editing.oauth}/start`, '_blank', 'noopener,noreferrer')}>{oauthReady.includes(editing.oauth) ? t('settings.oauthConnect') : t('settings.oauthAfterRestart')}</button>}
                 <button type="submit" className="settings-button" disabled={saveState === 'saving'}>{saveState === 'saving' ? t('settings.saving') : t('settings.save')}</button>
               </div>

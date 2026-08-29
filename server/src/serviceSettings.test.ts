@@ -22,6 +22,15 @@ describe('ServiceSettingsStore', () => {
     expect(await reloaded.load()).toEqual({ lastfm: { LASTFM_USER: 'listener', LASTFM_API_KEY: 'secret' } });
   });
 
+  it('returns a stored service snapshot so a partial update can be merged onto it', async () => {
+    temp = await mkdtemp(path.join(os.tmpdir(), 'nohm-settings-'));
+    const store = new ServiceSettingsStore(path.join(temp, 'services.json'), codec);
+    await store.set('valorant', { RIOT_ID: 'Alpha#EUW', RIOT_REGION: 'eu', HENRIKDEV_API_KEY: 'key-1' });
+    const merged = { ...store.get('valorant'), RIOT_ID: 'Bravo#EUW' };
+    expect(merged).toEqual({ RIOT_ID: 'Bravo#EUW', RIOT_REGION: 'eu', HENRIKDEV_API_KEY: 'key-1' });
+    expect(store.get('roblox')).toEqual({});
+  });
+
   it('applies stored settings before environment parsing', () => {
     applyServiceSettingsToEnvironment({ weather: { WEATHER_LAT: '48.85', WEATHER_LON: '2.35' } });
     expect(process.env.WEATHER_LAT).toBe('48.85');

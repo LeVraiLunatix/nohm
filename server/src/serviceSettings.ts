@@ -128,6 +128,12 @@ export class ServiceSettingsStore {
     return Object.keys(this.settings) as ConfigurableServiceId[];
   }
 
+  /** The stored fields for one service, so a caller can merge a partial update onto them
+      before re-validating — e.g. changing a Riot ID without re-sending the API key. */
+  get(id: ConfigurableServiceId): Record<string, string> {
+    return { ...(this.settings[id] ?? {}) };
+  }
+
   async set(id: ConfigurableServiceId, values: Record<string, string>): Promise<void> {
     this.settings = { ...this.settings, [id]: values };
     const protectedData = await this.codec.protect(JSON.stringify(this.settings));
