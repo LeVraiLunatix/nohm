@@ -127,6 +127,19 @@ export function SettingsDetail() {
     }
   };
 
+  // Row-level "Connecter": open the editor (so status/redirect-URI/messages show) and fire the
+  // matching flow in the same click so popup blockers don't eat window.open.
+  const connectService = (service: ServiceDefinition) => {
+    if (editing?.id !== service.id) openEditor(service);
+    if (service.oauth === 'github') { void connectGitHub(); return; }
+    if (service.oauth) window.open(`/api/settings/oauth/${service.oauth}/start`, '_blank', 'noopener,noreferrer');
+  };
+
+  // gmail/spotify/lastfm need their id/key present first; steam (OpenID) and github (device flow,
+  // which returns its own "add the client id" message) can always be started.
+  const connectDisabled = (service: ServiceDefinition): boolean =>
+    service.oauth === 'steam' || service.oauth === 'github' ? false : !oauthReady.includes(service.oauth ?? '');
+
   const detectMyLocation = async () => {
     if (!('geolocation' in navigator)) { setPanelMsg(t('settings.locationDenied')); return; }
     setLocating(true);
@@ -385,7 +398,16 @@ export function SettingsDetail() {
                     <div><dt>{t('settings.refresh')}</dt><dd>{service.refresh}{service.localOnly ? ` · ${t('settings.localOnly')}` : ''}</dd></div>
                   </dl>
                   <span className="service-state">{t(`settings.${status}`)}</span>
-                  {service.fields ? <button type="button" className="settings-button settings-button--small" onClick={() => editing?.id === service.id ? closeEditor() : openEditor(service)}>{configured.includes(service.id) ? t('settings.modify') : t('settings.configure')}</button> : <button type="button" className="settings-button settings-button--small" disabled={!service.widgetIds[0] || testing === service.id} onClick={() => void test(service.widgetIds[0]!, service.id)}>{testing === service.id ? t('settings.testing') : t('settings.test')}</button>}
+                  {service.oauth ? (
+                    <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+                      <button type="button" className="settings-button settings-button--small" disabled={connectDisabled(service)} title={connectDisabled(service) ? t('settings.connectNeedsEnv') : undefined} onClick={() => connectService(service)}>{t('settings.connect')}</button>
+                      <button type="button" className="settings-button settings-button--small settings-button--ghost" onClick={() => editing?.id === service.id ? closeEditor() : openEditor(service)}>{t('settings.keys')}</button>
+                    </div>
+                  ) : service.fields ? (
+                    <button type="button" className="settings-button settings-button--small" onClick={() => editing?.id === service.id ? closeEditor() : openEditor(service)}>{configured.includes(service.id) ? t('settings.modify') : t('settings.configure')}</button>
+                  ) : (
+                    <button type="button" className="settings-button settings-button--small" disabled={!service.widgetIds[0] || testing === service.id} onClick={() => void test(service.widgetIds[0]!, service.id)}>{testing === service.id ? t('settings.testing') : t('settings.test')}</button>
+                  )}
                 </article>
                 {editing?.id === service.id && connectionEditor}
               </Fragment>
