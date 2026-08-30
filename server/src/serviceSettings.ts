@@ -28,7 +28,16 @@ export const serviceSettingsSchemas = {
     .refine((v) => v.STEAM_ID || v.STEAM_API_KEY, { message: 'provide a SteamID or an API key' }),
   cider: z.object({ CIDER_RPC_URL: z.string().url(), CIDER_RPC_TOKEN: z.string().optional(), CIDER_RPC_UNAUTHENTICATED: z.enum(['0', '1']).optional() }),
   spotify: z.object({ SPOTIFY_CLIENT_ID: z.string().trim().min(1), SPOTIFY_CLIENT_SECRET: z.string().min(1) }),
-  lastfm: z.object({ LASTFM_USER: z.string().trim().min(1), LASTFM_API_KEY: z.string().min(1) }),
+  // "Se connecter avec Last.fm" (auth.getSession web flow) fills LASTFM_USER; it needs the app
+  // key + secret registered once at last.fm/api/account/create. The provider only reads with the
+  // key + user, so the secret stays optional.
+  lastfm: z
+    .object({
+      LASTFM_API_KEY: z.string().min(1).optional(),
+      LASTFM_SECRET: z.string().min(1).optional(),
+      LASTFM_USER: z.string().trim().min(1).optional(),
+    })
+    .refine((v) => v.LASTFM_API_KEY || v.LASTFM_USER, { message: 'provide an API key or a username' }),
   valorant: z.object({ RIOT_ID: z.string().regex(/^.+#.+$/), RIOT_REGION: z.string().trim().min(1), HENRIKDEV_API_KEY: z.string().min(1) }),
   clashRoyale: z.object({ CLASH_ROYALE_ID: z.string().trim().min(1), CLASH_ROYALE_API_KEY: z.string().min(1) }),
   clashOfClans: z.object({ CLASH_OF_CLANS_ID: z.string().trim().min(1), CLASH_OF_CLANS_API_KEY: z.string().min(1) }),

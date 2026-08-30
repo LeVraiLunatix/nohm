@@ -34,6 +34,7 @@ import {
 } from './serviceSettings.js';
 import { writeSpotifyToken } from './spotifyToken.js';
 import { writeGmailToken } from './gmailToken.js';
+import { md5Hex } from './md5.js';
 
 // A transient network blip (e.g. a Postgres socket erroring outside any awaited query, as seen
 // with Railway's TCP proxy) otherwise crashes the whole process — Node treats an unhandled
@@ -144,11 +145,21 @@ function googleCreds(): { clientId: string; clientSecret: string } | undefined {
   const s = serviceSettingsStore.get('gmail');
   return s.GOOGLE_CLIENT_ID && s.GOOGLE_CLIENT_SECRET ? { clientId: s.GOOGLE_CLIENT_ID, clientSecret: s.GOOGLE_CLIENT_SECRET } : undefined;
 }
+function lastfmCreds(): { apiKey: string; secret: string } | undefined {
+  const s = serviceSettingsStore.get('lastfm');
+  const apiKey = s.LASTFM_API_KEY || process.env.LASTFM_API_KEY;
+  const secret = s.LASTFM_SECRET || process.env.LASTFM_SECRET;
+  return apiKey && secret ? { apiKey, secret } : undefined;
+}
 
 app.get('/api/settings/services', (_req, res) => {
   res.json({
     configured: configuredServiceIds(),
-    oauthReady: [googleCreds() ? 'gmail' : null, spotifyCreds() ? 'spotify' : null].filter(Boolean),
+    oauthReady: [
+      googleCreds() ? 'gmail' : null,
+      spotifyCreds() ? 'spotify' : null,
+      lastfmCreds() ? 'lastfm' : null,
+    ].filter(Boolean),
   });
 });
 
@@ -209,6 +220,35 @@ app.get('/api/settings/oauth/gmail/callback', async (req, res) => {
     writeGmailToken(tokens);
     res.send(oauthResultPage('Gmail est connecté', 'Vous pouvez fermer cet onglet puis actualiser Nohm.'));
   } catch { res.status(502).send(oauthResultPage('Connexion impossible', 'Google n’a pas accepté la connexion. Vérifiez votre client OAuth et son URI de redirection.')); }
+});
+
+// Last.fm web auth (auth.getSession). Redirect the user to last.fm to approve, then exchange the
+// one-time token for the account name. Needs the app key + secret registered once at
+// last.fm/api/account/create; the provider itself only reads with the key + user.
+app.get('/api/settings/oauth/lastfm/start', (_req, res) => {
+  const creds = lastfmCreds();
+  if (!creds) { res.status(409).send(oauthResultPage('Last.fm n’est pas prêt', 'Enregistrez d’abord la clé API et le secret Last.fm.')); return; }
+  const cb = `http://127.0.0.1:${env.port}/api/settings/oauth/lastfm/callback`;
+  res.redirect(`https://www.last.fm/api/auth/?api_key=${encodeURIComponent(creds.apiKey)}&cb=${encodeURIComponent(cb)}`);
+});
+
+app.get('/api/settings/oauth/lastfm/callback', async (req, res) => {
+  const creds = lastfmCreds();
+  const token = typeof req.query.token === 'string' ? req.query.token : '';
+  if (!creds || !token) { res.status(400).send(oauthResultPage('Connexion refusée', 'La demande Last.fm est incomplète ou a expiré.')); return; }
+  try {
+    // api_sig = md5 of the params sorted by name and concatenated as name+value, then + secret.
+    const signature = md5Hex(`api_key${creds.apiKey}methodauth.getSessiontoken${token}${creds.secret}`);
+    const url = new URL('https://ws.audioscrobbler.com/2.0/');
+    url.search = new URLSearchParams({ method: 'auth.getSession', api_key: creds.apiKey, token, api_sig: signature, format: 'json' }).toString();
+    const response = await fetch(url, { headers: { accept: 'application/json' } });
+    const body = (await response.json()) as { session?: { name?: string }; error?: unknown };
+    if (!response.ok || body.error !== undefined || !body.session?.name) throw new Error('lastfm session exchange failed');
+    await serviceSettingsStore.set('lastfm', { ...serviceSettingsStore.get('lastfm'), LASTFM_USER: body.session.name });
+    res.send(oauthResultPage('Last.fm est connecté', `Compte @${body.session.name} enregistré. Redémarrez Nohm une fois.`));
+  } catch {
+    res.status(502).send(oauthResultPage('Connexion impossible', 'Last.fm n’a pas validé la connexion. Vérifiez la clé et le secret.'));
+  }
 });
 
 // GitHub device flow — no callback URL and no client secret. The user registers a minimal OAuth
