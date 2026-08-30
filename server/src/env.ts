@@ -17,7 +17,7 @@ export interface ServerEnv {
   icloud?: { username: string; password: string };
   calendarIcsFeeds: { name: string; url: string }[];
   google?: { clientId: string; clientSecret: string };
-  spotify?: { clientId: string; clientSecret: string };
+  spotify?: { clientId: string; clientSecret?: string };
   cider?: { baseUrl: string; token?: string };
   lastfm?: { apiKey: string; user: string };
   hue?: { clientId: string; clientSecret: string };
@@ -225,13 +225,14 @@ export function loadEnv(): ServerEnv {
             clientSecret: process.env.GOOGLE_CLIENT_SECRET,
           }
         : undefined,
-    spotify:
-      process.env.SPOTIFY_CLIENT_ID && process.env.SPOTIFY_CLIENT_SECRET
-        ? {
-            clientId: process.env.SPOTIFY_CLIENT_ID,
-            clientSecret: process.env.SPOTIFY_CLIENT_SECRET,
-          }
-        : undefined,
+    // The connect flow is PKCE, so the client id alone is enough. A client secret is still
+    // honoured (confidential-client refresh) when one is set, but never required.
+    spotify: process.env.SPOTIFY_CLIENT_ID
+      ? {
+          clientId: process.env.SPOTIFY_CLIENT_ID,
+          clientSecret: process.env.SPOTIFY_CLIENT_SECRET || undefined,
+        }
+      : undefined,
     cider: parseCider(),
     lastfm: parseLastFm(),
     hue:

@@ -1,5 +1,6 @@
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { createHash, randomBytes } from 'node:crypto';
 import express from 'express';
 import { google } from 'googleapis';
 import { z } from 'zod';
@@ -34,7 +35,7 @@ import {
 import { writeSpotifyToken } from './spotifyToken.js';
 import { writeGmailToken } from './gmailToken.js';
 import { md5Hex } from './md5.js';
-import { signOAuthState, verifyOAuthState } from './oauthState.js';
+import { signOAuthState, verifyOAuthState, readOAuthStateData } from './oauthState.js';
 
 // A transient network blip (e.g. a Postgres socket erroring outside any awaited query, as seen
 // with Railway's TCP proxy) otherwise crashes the whole process — Node treats an unhandled
@@ -133,10 +134,12 @@ function configuredServiceIds(): string[] {
 
 // OAuth app credentials can come from the environment or from what was saved in the Settings UI,
 // so "Connecter le compte" lights up as soon as the id/secret are saved — no restart in between.
-function spotifyCreds(): { clientId: string; clientSecret: string } | undefined {
+function spotifyCreds(): { clientId: string; clientSecret?: string } | undefined {
   if (env.spotify) return env.spotify;
   const s = serviceSettingsStore.get('spotify');
-  return s.SPOTIFY_CLIENT_ID && s.SPOTIFY_CLIENT_SECRET ? { clientId: s.SPOTIFY_CLIENT_ID, clientSecret: s.SPOTIFY_CLIENT_SECRET } : undefined;
+  // PKCE only needs the client id; a secret is still used for confidential-client token refresh
+  // if one happens to be set, but the "Connecter" button lights up without it.
+  return s.SPOTIFY_CLIENT_ID ? { clientId: s.SPOTIFY_CLIENT_ID, clientSecret: s.SPOTIFY_CLIENT_SECRET || undefined } : undefined;
 }
 function googleCreds(): { clientId: string; clientSecret: string } | undefined {
   if (env.google) return env.google;
@@ -194,15 +197,21 @@ const oauthRedirect = (req: express.Request, service: 'gmail' | 'spotify') =>
   `${callbackBaseFor(req)}/api/settings/oauth/${service}/callback`;
 const oauthResultPage = (title: string, detail: string) => `<!doctype html><html lang="fr"><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>${title}</title><style>body{margin:0;min-height:100vh;display:grid;place-items:center;background:#090a10;color:#f6f5fb;font:16px system-ui}.card{max-width:34rem;margin:1rem;padding:2rem;border:1px solid #292b38;border-radius:24px;background:#12131c;box-shadow:0 24px 80px #0008}h1{margin:0 0 .6rem;font-size:1.6rem}p{color:#aaaebe;line-height:1.5}button{border:0;border-radius:12px;padding:.7rem 1rem;background:#736bff;color:white;font-weight:700;cursor:pointer}</style><main class="card"><h1>${title}</h1><p>${detail}</p><button onclick="window.close()">Fermer cet onglet</button></main></html>`;
 
+const base64url = (buf: Buffer) => buf.toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+
 app.get('/api/settings/oauth/spotify/start', (req, res) => {
   const creds = spotifyCreds();
-  if (!creds) { res.status(409).send(oauthResultPage('Spotify n’est pas prêt', 'Enregistrez d’abord l’ID client et le secret Spotify.')); return; }
+  if (!creds) { res.status(409).send(oauthResultPage('Spotify n’est pas prêt', 'Renseignez SPOTIFY_CLIENT_ID dans le fichier .env.')); return; }
+  const verifier = base64url(randomBytes(64));
+  const challenge = base64url(createHash('sha256').update(verifier).digest());
   const url = new URL('https://accounts.spotify.com/authorize');
   url.searchParams.set('response_type', 'code');
   url.searchParams.set('client_id', creds.clientId);
   url.searchParams.set('scope', 'user-read-currently-playing user-read-recently-played user-top-read');
   url.searchParams.set('redirect_uri', oauthRedirect(req, 'spotify'));
-  url.searchParams.set('state', signOAuthState(dataDir, 'spotify'));
+  url.searchParams.set('code_challenge_method', 'S256');
+  url.searchParams.set('code_challenge', challenge);
+  url.searchParams.set('state', signOAuthState(dataDir, 'spotify', { data: { v: verifier } }));
   res.redirect(url.toString());
 });
 
@@ -210,9 +219,12 @@ app.get('/api/settings/oauth/spotify/callback', async (req, res) => {
   const state = typeof req.query.state === 'string' ? req.query.state : '';
   const code = typeof req.query.code === 'string' ? req.query.code : '';
   const creds = spotifyCreds();
-  if (!creds || !verifyOAuthState(dataDir, state, 'spotify') || !code) { res.status(400).send(oauthResultPage('Connexion refusée', 'La demande Spotify a expiré ou a été annulée.')); return; }
+  const stateData = readOAuthStateData(dataDir, state, 'spotify');
+  if (!creds || !stateData?.v || !code) { res.status(400).send(oauthResultPage('Connexion refusée', 'La demande Spotify a expiré ou a été annulée.')); return; }
   try {
-    const response = await fetch('https://accounts.spotify.com/api/token', { method: 'POST', headers: { 'content-type': 'application/x-www-form-urlencoded', authorization: `Basic ${Buffer.from(`${creds.clientId}:${creds.clientSecret}`).toString('base64')}` }, body: new URLSearchParams({ grant_type: 'authorization_code', code, redirect_uri: oauthRedirect(req, 'spotify') }) });
+    // PKCE token exchange: no client secret, the code_verifier proves this is the same client
+    // that started the flow.
+    const response = await fetch('https://accounts.spotify.com/api/token', { method: 'POST', headers: { 'content-type': 'application/x-www-form-urlencoded' }, body: new URLSearchParams({ grant_type: 'authorization_code', code, redirect_uri: oauthRedirect(req, 'spotify'), client_id: creds.clientId, code_verifier: stateData.v }) });
     const token = await response.json() as { access_token?: string; refresh_token?: string; expires_in?: number };
     if (!response.ok || !token.access_token || !token.refresh_token || !token.expires_in) throw new Error('token exchange failed');
     writeSpotifyToken({ access_token: token.access_token, refresh_token: token.refresh_token, expires_at: Date.now() + token.expires_in * 1000 });

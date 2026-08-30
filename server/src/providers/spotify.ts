@@ -214,7 +214,7 @@ function createSpotifyGet(
  * response bodies — Spotify's token responses carry the tokens themselves.
  */
 export async function accessToken(
-  oauth: { clientId: string; clientSecret: string },
+  oauth: { clientId: string; clientSecret?: string },
   signal: AbortSignal,
   forceRefresh = false,
 ): Promise<string> {
@@ -222,19 +222,16 @@ export async function accessToken(
   if (!token) throw new Error('spotify is not configured');
   if (!forceRefresh && token.expires_at - Date.now() > 60_000) return token.access_token;
 
-  const res = await fetch(TOKEN_URL, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/x-www-form-urlencoded',
-      Authorization:
-        'Basic ' + Buffer.from(`${oauth.clientId}:${oauth.clientSecret}`).toString('base64'),
-    },
-    body: new URLSearchParams({
-      grant_type: 'refresh_token',
-      refresh_token: token.refresh_token,
-    }),
-    signal,
-  });
+  // With a client secret: confidential-client refresh (Basic auth). Without one: the token was
+  // obtained via PKCE, and the refresh is a public-client call with `client_id` in the body.
+  const body = new URLSearchParams({ grant_type: 'refresh_token', refresh_token: token.refresh_token });
+  const headers: Record<string, string> = { 'Content-Type': 'application/x-www-form-urlencoded' };
+  if (oauth.clientSecret) {
+    headers.Authorization = 'Basic ' + Buffer.from(`${oauth.clientId}:${oauth.clientSecret}`).toString('base64');
+  } else {
+    body.set('client_id', oauth.clientId);
+  }
+  const res = await fetch(TOKEN_URL, { method: 'POST', headers, body, signal });
   if (!res.ok) throw new Error(`spotify token refresh failed: ${res.status}`);
   const json = (await res.json()) as {
     access_token: string;
@@ -383,7 +380,7 @@ function buildSnapshot(
 }
 
 export function createSpotifyProvider(
-  oauth: { clientId: string; clientSecret: string } | undefined,
+  oauth: { clientId: string; clientSecret?: string } | undefined,
   snapshotStore: SpotifySnapshotStore,
   historyStore: SpotifyHistoryStore,
 ): Provider<SpotifyData> {
