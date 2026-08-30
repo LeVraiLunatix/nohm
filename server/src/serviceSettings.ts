@@ -26,7 +26,9 @@ export const serviceSettingsSchemas = {
   steam: z
     .object({ STEAM_ID: z.string().regex(/^\d{17}$/).optional(), STEAM_API_KEY: z.string().min(1).optional() })
     .refine((v) => v.STEAM_ID || v.STEAM_API_KEY, { message: 'provide a SteamID or an API key' }),
-  cider: z.object({ CIDER_RPC_URL: z.string().url(), CIDER_RPC_TOKEN: z.string().optional(), CIDER_RPC_UNAUTHENTICATED: z.enum(['0', '1']).optional() }),
+  // CIDER_RPC_URL defaults to http://127.0.0.1:10767 server-side, so only the token is really
+  // needed unless Cider's RPC port was changed.
+  cider: z.object({ CIDER_RPC_TOKEN: z.string().optional(), CIDER_RPC_URL: z.string().url().optional(), CIDER_RPC_UNAUTHENTICATED: z.enum(['0', '1']).optional() }),
   spotify: z.object({ SPOTIFY_CLIENT_ID: z.string().trim().min(1), SPOTIFY_CLIENT_SECRET: z.string().min(1) }),
   // "Se connecter avec Last.fm" (auth.getSession web flow) fills LASTFM_USER; it needs the app
   // key + secret registered once at last.fm/api/account/create. The provider only reads with the

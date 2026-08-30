@@ -55,3 +55,27 @@ export function writeRefreshMultiplier(value: number): void {
   localStorage.setItem('nohm.refreshMultiplier', String(value));
   window.dispatchEvent(new Event(PREFERENCES_EVENT));
 }
+
+export type MusicProvider = 'cider' | 'spotify' | 'lastfm';
+const MUSIC_PROVIDERS: readonly MusicProvider[] = ['cider', 'spotify', 'lastfm'];
+
+/** Which music service the Music space and its overview card show. */
+export function readMusicProvider(): MusicProvider {
+  const value = localStorage.getItem('nohm.musicProvider');
+  return MUSIC_PROVIDERS.includes(value as MusicProvider) ? (value as MusicProvider) : 'cider';
+}
+
+export function writeMusicProvider(value: MusicProvider): void {
+  localStorage.setItem('nohm.musicProvider', value);
+  window.dispatchEvent(new Event(PREFERENCES_EVENT));
+}
+
+export function useMusicProvider(): MusicProvider {
+  const [provider, setProvider] = useState(readMusicProvider);
+  useEffect(() => {
+    const update = () => setProvider(readMusicProvider());
+    window.addEventListener(PREFERENCES_EVENT, update);
+    return () => window.removeEventListener(PREFERENCES_EVENT, update);
+  }, []);
+  return provider;
+}

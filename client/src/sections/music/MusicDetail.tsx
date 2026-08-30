@@ -5,13 +5,14 @@ import { useI18n } from '../../i18n/I18nProvider';
 import { SpotifyDetail } from '../spotify/SpotifyDetail';
 import { MusicPlayer } from './MusicPlayer';
 import { LastFmPanel } from './LastFmPanel';
+import { readMusicProvider } from '../settings/preferences';
 import './music.css';
 
 type ProviderTab = 'cider' | 'spotify' | 'lastfm' | 'apple';
 
 export function MusicDetail() {
   const { t } = useI18n();
-  const [tab, setTab] = useState<ProviderTab>('cider');
+  const [tab, setTab] = useState<ProviderTab>(readMusicProvider);
   const widget = useWidget<MusicData>('music-cider');
   const [override, setOverride] = useState<WidgetEnvelope<MusicData> | null>(null);
   const envelope = override ?? widget.envelope;

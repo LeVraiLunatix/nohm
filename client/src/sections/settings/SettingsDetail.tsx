@@ -4,7 +4,7 @@ import { useI18n } from '../../i18n/I18nProvider';
 import { SERVICE_CATALOG, type ServiceDefinition } from './serviceCatalog';
 import { SetupWizard } from './SetupWizard';
 import { SECTIONS } from '../registry';
-import { readRefreshMultiplier, readVisibleSections, writeRefreshMultiplier, writeVisibleSections } from './preferences';
+import { readMusicProvider, readRefreshMultiplier, readVisibleSections, writeMusicProvider, writeRefreshMultiplier, writeVisibleSections, type MusicProvider } from './preferences';
 import { useGameMode, type GameShortcut } from '../../gameMode/GameModeProvider';
 
 function serviceStatus(serviceIds: string[], summaries: WidgetSummary[]): 'connected' | 'offline' | 'notConfigured' {
@@ -34,6 +34,7 @@ export function SettingsDetail() {
   const [wizard, setWizard] = useState(false);
   const [visibleSections, setVisibleSections] = useState(readVisibleSections);
   const [refreshMultiplier, setRefreshMultiplier] = useState(readRefreshMultiplier);
+  const [musicProvider, setMusicProvider] = useState(readMusicProvider);
   const { shortcut, setShortcut } = useGameMode();
   const editingConfigured = editing ? configured.includes(editing.id) : false;
 
@@ -256,6 +257,19 @@ export function SettingsDetail() {
             </label>
           ))}
         </div>
+      </section>
+      <section className="settings-card glass">
+        <h2>{t('settings.music')}</h2>
+        <p className="settings-help">{t('settings.musicHint')}</p>
+        <select className="settings-select" value={musicProvider} onChange={(event) => {
+          const value = event.target.value as MusicProvider;
+          setMusicProvider(value);
+          writeMusicProvider(value);
+        }}>
+          <option value="cider">Cider (Apple Music)</option>
+          <option value="spotify">Spotify</option>
+          <option value="lastfm">Last.fm</option>
+        </select>
       </section>
       <section className="settings-card glass">
         <h2>{t('settings.polling')}</h2>
