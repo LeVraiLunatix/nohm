@@ -644,7 +644,16 @@ if (env.isProduction) {
   const dirname = path.dirname(fileURLToPath(import.meta.url));
   const clientDist = path.resolve(dirname, '../../client/dist');
   app.use(express.static(clientDist));
-  app.get(/^\/(?!api\/).*/, (_req, res) => {
+  app.get(/^\/(?!api\/).*/, (req, res, next) => {
+    // SPA fallback for navigations only. A request for a file that isn't on disk — a stale
+    // index.html (kept by an old service worker) asking for a chunk a rebuild has since
+    // renamed — must 404, not get index.html back with a text/html MIME type. That MIME
+    // mismatch turns a clean cache miss into "Failed to load module script" and wedges the
+    // app until every tab closes; a real 404 lets the PWA runtime recover on the next load.
+    if (path.extname(req.path)) {
+      next();
+      return;
+    }
     res.sendFile(path.join(clientDist, 'index.html'));
   });
 }
