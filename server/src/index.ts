@@ -275,6 +275,47 @@ app.post('/api/settings/oauth/github/poll', async (req, res) => {
   }
 });
 
+// Steam OpenID 2.0 — "Se connecter avec Steam" needs no app registration and no API key. Steam
+// redirects back with a claimed_id URL ending in the SteamID64; we verify it against Steam and
+// store the id (the Web API key is still entered once, separately).
+app.get('/api/settings/oauth/steam/start', (_req, res) => {
+  const url = new URL('https://steamcommunity.com/openid/login');
+  url.searchParams.set('openid.ns', 'http://specs.openid.net/auth/2.0');
+  url.searchParams.set('openid.mode', 'checkid_setup');
+  url.searchParams.set('openid.return_to', `http://127.0.0.1:${env.port}/api/settings/oauth/steam/callback`);
+  url.searchParams.set('openid.realm', `http://127.0.0.1:${env.port}`);
+  url.searchParams.set('openid.identity', 'http://specs.openid.net/auth/2.0/identifier_select');
+  url.searchParams.set('openid.claimed_id', 'http://specs.openid.net/auth/2.0/identifier_select');
+  res.redirect(url.toString());
+});
+
+app.get('/api/settings/oauth/steam/callback', async (req, res) => {
+  const params = new URLSearchParams();
+  for (const [key, value] of Object.entries(req.query)) {
+    if (key.startsWith('openid.') && typeof value === 'string') params.set(key, value);
+  }
+  const claimed = params.get('openid.claimed_id') ?? '';
+  const match = /^https:\/\/steamcommunity\.com\/openid\/id\/(\d{17})$/.exec(claimed);
+  if (!match || params.get('openid.mode') !== 'id_res') {
+    res.status(400).send(oauthResultPage('Connexion refusée', 'La réponse Steam est incomplète ou a expiré.'));
+    return;
+  }
+  try {
+    params.set('openid.mode', 'check_authentication');
+    const verify = await fetch('https://steamcommunity.com/openid/login', {
+      method: 'POST',
+      headers: { 'content-type': 'application/x-www-form-urlencoded' },
+      body: params,
+    });
+    const text = await verify.text();
+    if (!verify.ok || !/is_valid\s*:\s*true/.test(text)) throw new Error('openid verification failed');
+    await serviceSettingsStore.set('steam', { ...serviceSettingsStore.get('steam'), STEAM_ID: match[1] });
+    res.send(oauthResultPage('Steam est connecté', `SteamID ${match[1]} enregistré. Ajoutez votre clé Web API si besoin, puis redémarrez Nohm.`));
+  } catch {
+    res.status(502).send(oauthResultPage('Connexion impossible', 'Steam n’a pas validé la connexion. Réessayez.'));
+  }
+});
+
 app.put('/api/settings/services/:serviceId', async (req, res) => {
   const { serviceId } = req.params;
   if (!isConfigurableServiceId(serviceId)) {

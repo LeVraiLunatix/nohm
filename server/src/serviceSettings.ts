@@ -21,7 +21,11 @@ export const serviceSettingsSchemas = {
     .refine((v) => v.GITHUB_OAUTH_CLIENT_ID || (v.GITHUB_USERNAME && v.GITHUB_TOKEN), {
       message: 'provide the OAuth client id, or a username + token pair',
     }),
-  steam: z.object({ STEAM_ID: z.string().regex(/^\d{17}$/), STEAM_API_KEY: z.string().min(1) }),
+  // "Se connecter avec Steam" (OpenID) fills STEAM_ID, so it can arrive separately from the
+  // one Web API key. The provider still needs both before it activates.
+  steam: z
+    .object({ STEAM_ID: z.string().regex(/^\d{17}$/).optional(), STEAM_API_KEY: z.string().min(1).optional() })
+    .refine((v) => v.STEAM_ID || v.STEAM_API_KEY, { message: 'provide a SteamID or an API key' }),
   cider: z.object({ CIDER_RPC_URL: z.string().url(), CIDER_RPC_TOKEN: z.string().optional(), CIDER_RPC_UNAUTHENTICATED: z.enum(['0', '1']).optional() }),
   spotify: z.object({ SPOTIFY_CLIENT_ID: z.string().trim().min(1), SPOTIFY_CLIENT_SECRET: z.string().min(1) }),
   lastfm: z.object({ LASTFM_USER: z.string().trim().min(1), LASTFM_API_KEY: z.string().min(1) }),
