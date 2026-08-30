@@ -194,6 +194,15 @@ function createSpotifyGet(
       await snapshotStore.setRateLimitedUntil(Date.now() + retryAfterMs);
       throw new Error(`spotify rate limited; retry in ${Math.ceil(retryAfterMs / 1000)} seconds`);
     }
+    // A 403 on a correctly-scoped call almost always means the Spotify app is still in
+    // Development Mode and this account isn't on its allowlist (Dashboard → your app →
+    // Settings → User Management → add the email). OAuth succeeds regardless, so the failure
+    // only shows up here on the first real request.
+    if (res.status === 403) {
+      throw new Error(
+        `spotify ${path} failed: 403 — add your account under the app's User Management (Development Mode allowlist), then reconnect`,
+      );
+    }
     if (!res.ok) throw new Error(`spotify ${path} failed: ${res.status}`);
     return (await res.json()) as T;
   };
