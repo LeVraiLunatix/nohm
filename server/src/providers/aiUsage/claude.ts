@@ -267,7 +267,10 @@ export function parseClaudeUsageScreen(screen: string, now = new Date()): Claude
 
 export async function claudeInteractiveUsageSnapshot(): Promise<ClaudeQuota> {
   try {
-    const { CLAUDE_CODE_OAUTH_TOKEN, ANTHROPIC_API_KEY, ...cleanEnv } = process.env;
+    // Drop ANTHROPIC_API_KEY so the probe reads subscription usage, not API billing (which has no
+    // 5-hour/weekly windows). Keep CLAUDE_CODE_OAUTH_TOKEN: for users authed with `claude
+    // setup-token` it's the only credential, and stripping it left `/usage` reporting "Not logged in".
+    const { ANTHROPIC_API_KEY, ...cleanEnv } = process.env;
     await ensurePtySpawnHelper();
     const executable = await resolveProbeExecutable('claude');
     const output = await new Promise<string>((resolve) => {
