@@ -134,9 +134,17 @@ pub fn run() {
                         }
                     }
                     "game-mode" => {
-                        let active = game_for_menu.is_checked().unwrap_or(false);
+                        let active = if game_for_menu.is_checked().unwrap_or(false) { "true" } else { "false" };
                         if let Some(window) = app.get_webview_window("main") {
-                            let script = format!("document.documentElement.dataset.gameMode='{active}';localStorage.setItem('nohm.gameMode','{active}');fetch('/api/game-mode',{{method:'POST',headers:{{'content-type':'application/json'}},body:JSON.stringify({{active:{active}}})}}).catch(()=>{{}});window.dispatchEvent(new CustomEvent('nohm:game-mode-change',{{detail:{{active:{active}}}}}}));");
+                            // Placeholder-substitution instead of format!: the JS is full of literal
+                            // braces and escaping them all into a format string is how this broke before.
+                            let script = concat!(
+                                "document.documentElement.dataset.gameMode='__A__';",
+                                "localStorage.setItem('nohm.gameMode','__A__');",
+                                "fetch('/api/game-mode',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({active:__A__})}).catch(()=>{});",
+                                "window.dispatchEvent(new CustomEvent('nohm:game-mode-change',{detail:{active:__A__}}));"
+                            )
+                            .replace("__A__", active);
                             let _ = window.eval(&script);
                         }
                     }
