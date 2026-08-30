@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import type { WidgetSummary } from '@nohm/shared';
 import { useI18n } from '../../i18n/I18nProvider';
 import { SERVICE_CATALOG, type ServiceDefinition } from './serviceCatalog';
@@ -34,10 +34,19 @@ export function SettingsDetail() {
   const { shortcut, setShortcut } = useGameMode();
   const editingConfigured = editing ? configured.includes(editing.id) : false;
 
-  useEffect(() => {
+  const refreshStatus = useCallback(() => {
     void fetch('/api/widgets').then((response) => response.ok ? response.json() : { widgets: [] }).then((payload) => setSummaries(payload.widgets ?? [])).catch(() => setSummaries([]));
     void fetch('/api/settings/services').then((response) => response.ok ? response.json() : { configured: [], oauthReady: [] }).then((payload) => { setConfigured(payload.configured ?? []); setOauthReady(payload.oauthReady ?? []); }).catch(() => { setConfigured([]); setOauthReady([]); });
   }, []);
+
+  useEffect(() => {
+    refreshStatus();
+    // OAuth for Steam/Gmail/Spotify finishes in a separate tab; re-read status when we're focused
+    // again so a just-connected service stops looking unconnected.
+    const onFocus = () => refreshStatus();
+    window.addEventListener('focus', onFocus);
+    return () => window.removeEventListener('focus', onFocus);
+  }, [refreshStatus]);
 
   const closeEditor = () => {
     githubAbort.current = true;
@@ -81,6 +90,7 @@ export function SettingsDetail() {
           setGithubCode(null);
           setPanelMsg(t('settings.githubConnected', { name: result.username ?? '' }));
           setConfigured((current) => current.includes('github') ? current : [...current, 'github']);
+          refreshStatus();
           return;
         }
         if (result.status === 'error') { setGithubCode(null); setPanelMsg(t('settings.githubFailed')); return; }
@@ -120,6 +130,7 @@ export function SettingsDetail() {
       });
       setConfigured((current) => current.includes('weather') ? current : [...current, 'weather']);
       setPanelMsg(t('settings.locationSet', { coords: `${lat.toFixed(3)}, ${lon.toFixed(3)}` }));
+      refreshStatus();
     } catch {
       setPanelMsg(t('settings.locationDenied'));
     } finally {
@@ -139,6 +150,7 @@ export function SettingsDetail() {
       setConfigured((current) => current.includes(editing.id) ? current : [...current, editing.id]);
       setValues({});
       setSaveState('saved');
+      refreshStatus();
     } catch {
       setSaveState('error');
     }
