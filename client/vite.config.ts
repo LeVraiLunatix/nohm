@@ -65,7 +65,8 @@ export default defineConfig({
     host: true,
     // Tailscale Serve forwards the dashboard's HTTPS hostname to this local dev server.
     // Vite otherwise rejects that Host header before the app or API proxy can respond.
-    allowedHosts: ['desktop-endv2tl.tail619da5.ts.net'],
+    // A leading-dot entry allows any MagicDNS hostname, so no edit per machine/tailnet.
+    allowedHosts: ['.ts.net'],
     proxy: {
       // Dev server only — kept on a different port than the launchd-managed production
       // `npm start` instance (4821) so a dev session never fights it for the port.
