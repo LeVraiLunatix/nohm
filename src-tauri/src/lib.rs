@@ -89,7 +89,7 @@ async fn check_for_update(app: tauri::AppHandle) {
                 eprintln!("[nohm-update] install failed: {err}");
                 return;
             }
-            let _ = app.restart();
+            app.restart();
         }
         Ok(None) => {}
         Err(err) => eprintln!("[nohm-update] check failed: {err}"),
@@ -149,14 +149,15 @@ pub fn run() {
             // server) is already up via beforeDevCommand — point the window there and skip the
             // sidecar. A release build starts and waits for its own bundled server.
             if cfg!(debug_assertions) {
-                if let Some(window) = app.get_webview_window("main") {
+                if let Some(mut window) = app.get_webview_window("main") {
                     if let Ok(url) = "http://127.0.0.1:5173".parse() {
                         let _ = window.navigate(url);
                     }
                     let _ = window.show();
                 }
             } else {
-                match start_server(&app.handle()) {
+                let handle = app.handle().clone();
+                match start_server(&handle) {
                     Ok(child) => {
                         app.state::<Sidecar>().0.lock().unwrap().replace(child);
                     }
@@ -165,7 +166,7 @@ pub fn run() {
                 let ready_handle = app.handle().clone();
                 tauri::async_runtime::spawn(async move {
                     let _ = tauri::async_runtime::spawn_blocking(wait_for_server).await;
-                    if let Some(window) = ready_handle.get_webview_window("main") {
+                    if let Some(mut window) = ready_handle.get_webview_window("main") {
                         if let Ok(url) = "http://127.0.0.1:4821".parse() {
                             let _ = window.navigate(url);
                         }
