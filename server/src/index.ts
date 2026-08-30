@@ -132,8 +132,24 @@ function configuredServiceIds(): string[] {
   return [...ids];
 }
 
+// OAuth app credentials can come from the environment or from what was saved in the Settings UI,
+// so "Connecter le compte" lights up as soon as the id/secret are saved — no restart in between.
+function spotifyCreds(): { clientId: string; clientSecret: string } | undefined {
+  if (env.spotify) return env.spotify;
+  const s = serviceSettingsStore.get('spotify');
+  return s.SPOTIFY_CLIENT_ID && s.SPOTIFY_CLIENT_SECRET ? { clientId: s.SPOTIFY_CLIENT_ID, clientSecret: s.SPOTIFY_CLIENT_SECRET } : undefined;
+}
+function googleCreds(): { clientId: string; clientSecret: string } | undefined {
+  if (env.google) return env.google;
+  const s = serviceSettingsStore.get('gmail');
+  return s.GOOGLE_CLIENT_ID && s.GOOGLE_CLIENT_SECRET ? { clientId: s.GOOGLE_CLIENT_ID, clientSecret: s.GOOGLE_CLIENT_SECRET } : undefined;
+}
+
 app.get('/api/settings/services', (_req, res) => {
-  res.json({ configured: configuredServiceIds(), oauthReady: [env.google ? 'gmail' : null, env.spotify ? 'spotify' : null].filter(Boolean) });
+  res.json({
+    configured: configuredServiceIds(),
+    oauthReady: [googleCreds() ? 'gmail' : null, spotifyCreds() ? 'spotify' : null].filter(Boolean),
+  });
 });
 
 const oauthStates = new Map<string, { service: 'gmail' | 'spotify'; expiresAt: number }>();
@@ -141,12 +157,13 @@ const oauthRedirect = (service: 'gmail' | 'spotify') => `http://127.0.0.1:${env.
 const oauthResultPage = (title: string, detail: string) => `<!doctype html><html lang="fr"><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>${title}</title><style>body{margin:0;min-height:100vh;display:grid;place-items:center;background:#090a10;color:#f6f5fb;font:16px system-ui}.card{max-width:34rem;margin:1rem;padding:2rem;border:1px solid #292b38;border-radius:24px;background:#12131c;box-shadow:0 24px 80px #0008}h1{margin:0 0 .6rem;font-size:1.6rem}p{color:#aaaebe;line-height:1.5}button{border:0;border-radius:12px;padding:.7rem 1rem;background:#736bff;color:white;font-weight:700;cursor:pointer}</style><main class="card"><h1>${title}</h1><p>${detail}</p><button onclick="window.close()">Fermer cet onglet</button></main></html>`;
 
 app.get('/api/settings/oauth/spotify/start', (_req, res) => {
-  if (!env.spotify) { res.status(409).send(oauthResultPage('Spotify n’est pas prêt', 'Enregistrez d’abord l’ID client et le secret, puis redémarrez Nohm.')); return; }
+  const creds = spotifyCreds();
+  if (!creds) { res.status(409).send(oauthResultPage('Spotify n’est pas prêt', 'Enregistrez d’abord l’ID client et le secret Spotify.')); return; }
   const state = randomBytes(24).toString('base64url');
   oauthStates.set(state, { service: 'spotify', expiresAt: Date.now() + 10 * 60_000 });
   const url = new URL('https://accounts.spotify.com/authorize');
   url.searchParams.set('response_type', 'code');
-  url.searchParams.set('client_id', env.spotify.clientId);
+  url.searchParams.set('client_id', creds.clientId);
   url.searchParams.set('scope', 'user-read-currently-playing user-read-recently-played user-top-read');
   url.searchParams.set('redirect_uri', oauthRedirect('spotify'));
   url.searchParams.set('state', state);
@@ -158,9 +175,10 @@ app.get('/api/settings/oauth/spotify/callback', async (req, res) => {
   const entry = oauthStates.get(state);
   oauthStates.delete(state);
   const code = typeof req.query.code === 'string' ? req.query.code : '';
-  if (!env.spotify || !entry || entry.service !== 'spotify' || entry.expiresAt < Date.now() || !code) { res.status(400).send(oauthResultPage('Connexion refusée', 'La demande Spotify a expiré ou a été annulée.')); return; }
+  const creds = spotifyCreds();
+  if (!creds || !entry || entry.service !== 'spotify' || entry.expiresAt < Date.now() || !code) { res.status(400).send(oauthResultPage('Connexion refusée', 'La demande Spotify a expiré ou a été annulée.')); return; }
   try {
-    const response = await fetch('https://accounts.spotify.com/api/token', { method: 'POST', headers: { 'content-type': 'application/x-www-form-urlencoded', authorization: `Basic ${Buffer.from(`${env.spotify.clientId}:${env.spotify.clientSecret}`).toString('base64')}` }, body: new URLSearchParams({ grant_type: 'authorization_code', code, redirect_uri: oauthRedirect('spotify') }) });
+    const response = await fetch('https://accounts.spotify.com/api/token', { method: 'POST', headers: { 'content-type': 'application/x-www-form-urlencoded', authorization: `Basic ${Buffer.from(`${creds.clientId}:${creds.clientSecret}`).toString('base64')}` }, body: new URLSearchParams({ grant_type: 'authorization_code', code, redirect_uri: oauthRedirect('spotify') }) });
     const token = await response.json() as { access_token?: string; refresh_token?: string; expires_in?: number };
     if (!response.ok || !token.access_token || !token.refresh_token || !token.expires_in) throw new Error('token exchange failed');
     writeSpotifyToken({ access_token: token.access_token, refresh_token: token.refresh_token, expires_at: Date.now() + token.expires_in * 1000 });
@@ -169,10 +187,11 @@ app.get('/api/settings/oauth/spotify/callback', async (req, res) => {
 });
 
 app.get('/api/settings/oauth/gmail/start', (_req, res) => {
-  if (!env.google) { res.status(409).send(oauthResultPage('Gmail n’est pas prêt', 'Enregistrez d’abord l’ID client et le secret, puis redémarrez Nohm.')); return; }
+  const creds = googleCreds();
+  if (!creds) { res.status(409).send(oauthResultPage('Gmail n’est pas prêt', 'Enregistrez d’abord l’ID client et le secret Google.')); return; }
   const state = randomBytes(24).toString('base64url');
   oauthStates.set(state, { service: 'gmail', expiresAt: Date.now() + 10 * 60_000 });
-  const auth = new google.auth.OAuth2(env.google.clientId, env.google.clientSecret, oauthRedirect('gmail'));
+  const auth = new google.auth.OAuth2(creds.clientId, creds.clientSecret, oauthRedirect('gmail'));
   res.redirect(auth.generateAuthUrl({ access_type: 'offline', prompt: 'consent', state, scope: ['https://www.googleapis.com/auth/gmail.metadata'] }));
 });
 
@@ -181,9 +200,10 @@ app.get('/api/settings/oauth/gmail/callback', async (req, res) => {
   const entry = oauthStates.get(state);
   oauthStates.delete(state);
   const code = typeof req.query.code === 'string' ? req.query.code : '';
-  if (!env.google || !entry || entry.service !== 'gmail' || entry.expiresAt < Date.now() || !code) { res.status(400).send(oauthResultPage('Connexion refusée', 'La demande Google a expiré ou a été annulée.')); return; }
+  const creds = googleCreds();
+  if (!creds || !entry || entry.service !== 'gmail' || entry.expiresAt < Date.now() || !code) { res.status(400).send(oauthResultPage('Connexion refusée', 'La demande Google a expiré ou a été annulée.')); return; }
   try {
-    const auth = new google.auth.OAuth2(env.google.clientId, env.google.clientSecret, oauthRedirect('gmail'));
+    const auth = new google.auth.OAuth2(creds.clientId, creds.clientSecret, oauthRedirect('gmail'));
     const { tokens } = await auth.getToken(code);
     if (!tokens.refresh_token) throw new Error('missing refresh token');
     writeGmailToken(tokens);
