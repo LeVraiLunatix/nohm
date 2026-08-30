@@ -23,6 +23,7 @@
     "doctor:live": "npm run doctor:live -w server",
     "doctor:codex": "npm run doctor:codex -w server",
     "precommit:scope": "npm run precommit:scope -w server",
+    "tauri": "tauri",
     "desktop:dev": "tauri dev",
     "desktop:build": "tauri build"
   },
