@@ -19,7 +19,7 @@ La refonte vit sur `feat/nohm` (dépôt `LeVraiLunatix/nohm`, `upstream` = le pr
 - mode jeu manuel avec raccourci `Alt+Maj+G` et réduction des rafraîchissements ;
 - démarrage local sans base en mémoire, PostgreSQL restant disponible pour la persistance ;
 - shell Tauri 2 pour Windows (tray, lancement automatique, instance unique) — build NSIS/MSI en CI (`.github/workflows/desktop.yml`, sur tag `v*`).
-- site de présentation statique dans [`site/`](site/) — déployé sur Vercel.
+- site de présentation : dépôt séparé [LeVraiLunatix/nohm-site](https://github.com/LeVraiLunatix/nohm-site) → https://nohm.vercel.app
 
 Le shell Windows n’est pas encore autonome : il enveloppe un serveur lancé à part (`npm start`),
 Express n’est pas encore emballé en sidecar, et le premier build CI peut demander une itération.
