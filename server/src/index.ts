@@ -145,6 +145,17 @@ function googleCreds(): { clientId: string; clientSecret: string } | undefined {
   const s = serviceSettingsStore.get('gmail');
   return s.GOOGLE_CLIENT_ID && s.GOOGLE_CLIENT_SECRET ? { clientId: s.GOOGLE_CLIENT_ID, clientSecret: s.GOOGLE_CLIENT_SECRET } : undefined;
 }
+// The origin OAuth callbacks are built against. A public HTTPS origin (a `tailscale serve`
+// hostname) lets "Se connecter" run from the phone; loopback is the default. Store value wins so
+// a fresh save in Settings applies without a restart.
+function publicBaseUrl(): string {
+  const stored = serviceSettingsStore.get('general').NOHM_PUBLIC_URL;
+  if (stored) {
+    try { return new URL(stored).origin; } catch { /* fall through */ }
+  }
+  return env.publicUrl ?? `http://127.0.0.1:${env.port}`;
+}
+
 function lastfmCreds(): { apiKey: string; secret: string } | undefined {
   const s = serviceSettingsStore.get('lastfm');
   const apiKey = s.LASTFM_API_KEY || process.env.LASTFM_API_KEY;
@@ -160,11 +171,13 @@ app.get('/api/settings/services', (_req, res) => {
       spotifyCreds() ? 'spotify' : null,
       lastfmCreds() ? 'lastfm' : null,
     ].filter(Boolean),
+    // What OAuth redirect URIs the user must register with each provider.
+    callbackBase: publicBaseUrl(),
   });
 });
 
 const oauthStates = new Map<string, { service: 'gmail' | 'spotify'; expiresAt: number }>();
-const oauthRedirect = (service: 'gmail' | 'spotify') => `http://127.0.0.1:${env.port}/api/settings/oauth/${service}/callback`;
+const oauthRedirect = (service: 'gmail' | 'spotify') => `${publicBaseUrl()}/api/settings/oauth/${service}/callback`;
 const oauthResultPage = (title: string, detail: string) => `<!doctype html><html lang="fr"><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>${title}</title><style>body{margin:0;min-height:100vh;display:grid;place-items:center;background:#090a10;color:#f6f5fb;font:16px system-ui}.card{max-width:34rem;margin:1rem;padding:2rem;border:1px solid #292b38;border-radius:24px;background:#12131c;box-shadow:0 24px 80px #0008}h1{margin:0 0 .6rem;font-size:1.6rem}p{color:#aaaebe;line-height:1.5}button{border:0;border-radius:12px;padding:.7rem 1rem;background:#736bff;color:white;font-weight:700;cursor:pointer}</style><main class="card"><h1>${title}</h1><p>${detail}</p><button onclick="window.close()">Fermer cet onglet</button></main></html>`;
 
 app.get('/api/settings/oauth/spotify/start', (_req, res) => {
@@ -228,7 +241,7 @@ app.get('/api/settings/oauth/gmail/callback', async (req, res) => {
 app.get('/api/settings/oauth/lastfm/start', (_req, res) => {
   const creds = lastfmCreds();
   if (!creds) { res.status(409).send(oauthResultPage('Last.fm n’est pas prêt', 'Enregistrez d’abord la clé API et le secret Last.fm.')); return; }
-  const cb = `http://127.0.0.1:${env.port}/api/settings/oauth/lastfm/callback`;
+  const cb = `${publicBaseUrl()}/api/settings/oauth/lastfm/callback`;
   res.redirect(`https://www.last.fm/api/auth/?api_key=${encodeURIComponent(creds.apiKey)}&cb=${encodeURIComponent(cb)}`);
 });
 
@@ -342,8 +355,8 @@ app.get('/api/settings/oauth/steam/start', (_req, res) => {
   const url = new URL('https://steamcommunity.com/openid/login');
   url.searchParams.set('openid.ns', 'http://specs.openid.net/auth/2.0');
   url.searchParams.set('openid.mode', 'checkid_setup');
-  url.searchParams.set('openid.return_to', `http://127.0.0.1:${env.port}/api/settings/oauth/steam/callback`);
-  url.searchParams.set('openid.realm', `http://127.0.0.1:${env.port}`);
+  url.searchParams.set('openid.return_to', `${publicBaseUrl()}/api/settings/oauth/steam/callback`);
+  url.searchParams.set('openid.realm', publicBaseUrl());
   url.searchParams.set('openid.identity', 'http://specs.openid.net/auth/2.0/identifier_select');
   url.searchParams.set('openid.claimed_id', 'http://specs.openid.net/auth/2.0/identifier_select');
   res.redirect(url.toString());

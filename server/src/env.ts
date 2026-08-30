@@ -6,6 +6,9 @@ export interface ServerEnv {
   host: string;
   timezone: string;
   isProduction: boolean;
+  /** Public origin the dashboard is reached at (e.g. a `tailscale serve` hostname). OAuth
+      callbacks are built against this when set, so "Se connecter" works from a phone. */
+  publicUrl?: string;
   /** Optional: enables persistent cross-machine history through PostgreSQL. */
   databaseUrl?: string;
   weather?: { lat: number; lon: number };
@@ -146,6 +149,19 @@ export function parseLastFm(): ServerEnv['lastfm'] {
   return { apiKey, user };
 }
 
+export function parsePublicUrl(): string | undefined {
+  const raw = process.env.NOHM_PUBLIC_URL?.trim();
+  if (!raw) return undefined;
+  try {
+    const url = new URL(raw);
+    // Strip any path/query/trailing slash — callbacks are appended to the bare origin.
+    return url.origin;
+  } catch {
+    console.warn('⚠️  NOHM_PUBLIC_URL is not a valid URL — falling back to loopback for OAuth callbacks.');
+    return undefined;
+  }
+}
+
 /** Matches Batabiboing's derived token so a feed URL cannot authenticate its push endpoint. */
 export function batabiboingCalendarFeed(
   pushUrl: string,
@@ -181,6 +197,7 @@ export function loadEnv(): ServerEnv {
     host,
     timezone: process.env.DASHBOARD_TIMEZONE ?? 'Europe/Oslo',
     isProduction: process.env.NODE_ENV === 'production',
+    publicUrl: parsePublicUrl(),
     databaseUrl,
     weather: parseWeather(),
     github:

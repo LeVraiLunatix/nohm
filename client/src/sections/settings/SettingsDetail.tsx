@@ -20,6 +20,9 @@ export function SettingsDetail() {
   const [testing, setTesting] = useState<string | null>(null);
   const [configured, setConfigured] = useState<string[]>([]);
   const [oauthReady, setOauthReady] = useState<string[]>([]);
+  const [callbackBase, setCallbackBase] = useState('');
+  const [publicUrlDraft, setPublicUrlDraft] = useState('');
+  const [publicUrlState, setPublicUrlState] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
   const [editing, setEditing] = useState<ServiceDefinition | null>(null);
   const [values, setValues] = useState<Record<string, string>>({});
   const [saveState, setSaveState] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
@@ -36,8 +39,22 @@ export function SettingsDetail() {
 
   const refreshStatus = useCallback(() => {
     void fetch('/api/widgets').then((response) => response.ok ? response.json() : { widgets: [] }).then((payload) => setSummaries(payload.widgets ?? [])).catch(() => setSummaries([]));
-    void fetch('/api/settings/services').then((response) => response.ok ? response.json() : { configured: [], oauthReady: [] }).then((payload) => { setConfigured(payload.configured ?? []); setOauthReady(payload.oauthReady ?? []); }).catch(() => { setConfigured([]); setOauthReady([]); });
+    void fetch('/api/settings/services').then((response) => response.ok ? response.json() : { configured: [], oauthReady: [] }).then((payload) => { setConfigured(payload.configured ?? []); setOauthReady(payload.oauthReady ?? []); setCallbackBase(payload.callbackBase ?? ''); }).catch(() => { setConfigured([]); setOauthReady([]); });
   }, []);
+
+  const savePublicUrl = async () => {
+    setPublicUrlState('saving');
+    try {
+      const body = publicUrlDraft.trim() ? { NOHM_PUBLIC_URL: publicUrlDraft.trim() } : {};
+      const response = await fetch('/api/settings/services/general', { method: 'PUT', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) });
+      if (!response.ok) throw new Error('save failed');
+      setPublicUrlState('saved');
+      setPublicUrlDraft('');
+      refreshStatus();
+    } catch {
+      setPublicUrlState('error');
+    }
+  };
 
   useEffect(() => {
     refreshStatus();
@@ -224,6 +241,28 @@ export function SettingsDetail() {
         </label>
       </section>
       <section className="settings-card glass">
+        <h2>{t('settings.remoteAccess')}</h2>
+        <p className="settings-help">{t('settings.remoteAccessHint')}</p>
+        <label className="settings-field">
+          <span>{t('settings.publicUrl')}</span>
+          <input
+            className="settings-select"
+            type="url"
+            inputMode="url"
+            placeholder={callbackBase.startsWith('http://127.0.0.1') ? 'https://mon-pc.mon-tailnet.ts.net' : callbackBase}
+            value={publicUrlDraft}
+            onChange={(event) => setPublicUrlDraft(event.target.value)}
+          />
+        </label>
+        <p className="settings-help">
+          {t('settings.callbackBase', { base: callbackBase || '—' })}
+          {' · '}
+          <button type="button" className="settings-button settings-button--small" disabled={publicUrlState === 'saving'} onClick={() => void savePublicUrl()}>
+            {publicUrlState === 'saving' ? t('settings.saving') : publicUrlState === 'saved' ? t('settings.savedRestart') : t('settings.save')}
+          </button>
+        </p>
+      </section>
+      <section className="settings-card glass">
         <h2>{t('settings.services')}</h2>
         <p className="settings-help">{t('settings.servicesHint')}</p>
         {editing && (
@@ -245,6 +284,12 @@ export function SettingsDetail() {
                 </label>
               ))}
             </div>
+            {(editing.oauth === 'gmail' || editing.oauth === 'spotify' || editing.oauth === 'lastfm' || editing.oauth === 'steam') && callbackBase && (
+              <p className="connection-feedback">
+                {t('settings.redirectUri')}<br />
+                <code>{callbackBase}/api/settings/oauth/{editing.oauth}/callback</code>
+              </p>
+            )}
             <div className="connection-actions">
               <p className={`connection-feedback connection-feedback--${panelMsg ? 'saved' : saveState}`} role="status">
                 {githubCode

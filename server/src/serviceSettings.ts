@@ -42,6 +42,10 @@ export const serviceSettingsSchemas = {
   clashRoyale: z.object({ CLASH_ROYALE_ID: z.string().trim().min(1), CLASH_ROYALE_API_KEY: z.string().min(1) }),
   clashOfClans: z.object({ CLASH_OF_CLANS_ID: z.string().trim().min(1), CLASH_OF_CLANS_API_KEY: z.string().min(1) }),
   roblox: z.object({ ROBLOX_ID: z.string().trim().min(1), ROBLOSECURITY: z.string().optional() }),
+  // Not a service — the public origin the dashboard is reached at (e.g. a `tailscale serve`
+  // HTTPS hostname). When set, OAuth callbacks are built against it instead of 127.0.0.1, so
+  // "Se connecter" works from the phone and you register a stable HTTPS redirect with each provider.
+  general: z.object({ NOHM_PUBLIC_URL: z.string().url() }),
 } as const;
 
 export type ConfigurableServiceId = keyof typeof serviceSettingsSchemas;
