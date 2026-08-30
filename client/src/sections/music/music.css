@@ -14,3 +14,21 @@
 .lastfm-grid { display:grid; grid-template-columns:minmax(15rem,1.25fr) minmax(16rem,1fr); gap:1.5rem; }.lastfm-grid h2 { margin-bottom:.75rem; color:var(--color-ink-muted); font-size:.7rem; font-weight:700; letter-spacing:.14em; text-transform:uppercase; }.lastfm-history ol,.lastfm-stats,.lastfm-stats ol { display:grid; gap:.35rem; }.lastfm-history li,.lastfm-stats li { display:flex; justify-content:space-between; gap:1rem; padding:.55rem .7rem; border-radius:.7rem; background:var(--color-track); }.lastfm-history span,.lastfm-favorites span { display:grid; min-width:0; }.lastfm-history small,.lastfm-stats small,.lastfm-favorites small,.lastfm-history time { color:var(--color-ink-faint); font-size:.7rem; }.lastfm-stats { gap:1.25rem; }.lastfm-stats li span { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }.lastfm-favorites { grid-column:1/-1; }.lastfm-favorites>div { display:grid; grid-template-columns:repeat(auto-fit,minmax(10rem,1fr)); gap:.5rem; }.lastfm-favorites span { padding:.65rem; border-radius:.75rem; background:var(--color-track); }
 @media (max-width:900px) { .music-player { grid-template-columns:minmax(9rem,14rem) 1fr; }.music-queue { grid-column:1/-1; border-left:0; border-top:1px solid var(--color-card-border); padding:1rem 0 0; } } @media(max-width:600px){ .music-player { grid-template-columns:1fr; }.music-artwork { width:min(100%,18rem); justify-self:center; } }
 @media (max-width:760px) { .lastfm-grid { grid-template-columns:1fr; }.lastfm-favorites { grid-column:auto; } }
+
+/* Compact "now playing" on the overview card — cover, title, progress, and (Cider only) controls. */
+.music-now { display:flex; gap:1rem; align-items:center; }
+.music-now-cover { flex:0 0 auto; width:4.5rem; height:4.5rem; border-radius:.9rem; overflow:hidden; display:grid; place-items:center; background:var(--color-track); box-shadow:0 8px 20px rgb(0 0 0 / .28); }
+.music-now-cover img { width:100%; height:100%; object-fit:cover; }
+.music-now-cover span { font-size:1.4rem; color:var(--color-ink-faint); }
+.music-now-main { display:grid; gap:.15rem; min-width:0; flex:1 1 auto; }
+.music-now-label { font-size:.62rem; font-weight:700; letter-spacing:.14em; text-transform:uppercase; color:var(--color-ink-faint); }
+.music-now-title { font-size:1.05rem; font-weight:650; letter-spacing:-.01em; color:var(--color-ink); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.music-now-artist { font-size:.82rem; color:var(--color-ink-muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.music-now-bar { display:block; height:.28rem; margin-top:.4rem; border-radius:999px; background:var(--color-track); overflow:hidden; }
+.music-now-bar > span { display:block; height:100%; border-radius:999px; background:var(--accent); transition:width .5s linear; }
+.music-now-controls { display:flex; gap:.5rem; margin-top:.55rem; }
+.music-now-controls button { width:2.2rem; height:2.2rem; border-radius:999px; display:grid; place-items:center; color:var(--color-ink-muted); background:var(--color-track); box-shadow:inset 0 0 0 1px light-dark(rgb(0 0 0 / .05),rgb(255 255 255 / .06)); transition:background .15s,color .15s,transform .12s; }
+.music-now-controls button svg { width:1rem; height:1rem; }
+.music-now-controls button:hover:not(:disabled) { color:var(--color-ink); background:color-mix(in oklab,var(--accent) 16%,var(--color-track)); transform:translateY(-1px); }
+.music-now-controls button:nth-child(2) { color:#fff; background:var(--accent); box-shadow:0 6px 16px color-mix(in oklab,var(--accent) 30%,transparent); }
+.music-now-controls button:disabled { opacity:.35; }

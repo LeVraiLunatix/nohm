@@ -19,7 +19,13 @@ import { ThemeToggle } from './components/ThemeToggle';
 import { useI18n } from './i18n/I18nProvider';
 import { needsSetup, SetupWizard } from './sections/settings/SetupWizard';
 import { GameModeButton } from './gameMode/GameModeButton';
-import { useVisibleSections } from './sections/settings/preferences';
+import { useMusicProvider, useVisibleSections } from './sections/settings/preferences';
+
+/** Retint the Music space (card, icon, page glow) to match the chosen service. */
+const MUSIC_ACCENTS: Partial<Record<string, string>> = {
+  cider: 'light-dark(#e8112d, #fc4c65)',
+  lastfm: 'light-dark(#b90000, #f71414)',
+};
 
 /**
  * Dev tools reachable at runtime via `?dev=sky` (tune the continuous sky colors) or `?dev=gallery`
@@ -242,7 +248,15 @@ export default function App() {
   const [devTool] = useState(devToolFromUrl);
   const [skyDebugMinute, setSkyDebugMinute] = useState(() => minuteOfDay(new Date()));
   const [showSetup, setShowSetup] = useState(needsSetup);
+  const musicProvider = useMusicProvider();
   useDeviceLocation();
+
+  useEffect(() => {
+    const accent = MUSIC_ACCENTS[musicProvider];
+    if (accent) document.documentElement.style.setProperty('--color-accent-spotify', accent);
+    else document.documentElement.style.removeProperty('--color-accent-spotify');
+  }, [musicProvider]);
+
   const skyNow = devTool === 'sky' ? timeAtMinute(now, skyDebugMinute) : now;
 
   if (devTool === 'gallery') {
