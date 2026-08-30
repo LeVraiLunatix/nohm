@@ -39,9 +39,12 @@ for (const seed of ['config.example.json', '.env.example']) {
 }
 
 // 3 — a standalone production node_modules for the server (no workspace, no dev deps).
+//     @nohm/shared is dropped from the manifest and copied in by hand afterwards: an npm
+//     `file:` dep becomes a symlink that the Tauri bundler does not preserve, which is what
+//     broke the first install ("Cannot find package '@nohm/shared'").
 const stagedServerPkgPath = path.join(resourcesDir, 'server', 'package.json');
 const stagedServerPkg = JSON.parse(readFileSync(stagedServerPkgPath, 'utf8'));
-stagedServerPkg.dependencies['@nohm/shared'] = 'file:../shared';
+delete stagedServerPkg.dependencies['@nohm/shared'];
 delete stagedServerPkg.devDependencies;
 delete stagedServerPkg.scripts;
 writeFileSync(stagedServerPkgPath, JSON.stringify(stagedServerPkg, null, 2));
@@ -50,6 +53,12 @@ execFileSync('npm', ['install', '--omit=dev', '--no-audit', '--no-fund', '--no-p
   stdio: 'inherit',
   shell: process.platform === 'win32',
 });
+
+// @nohm/shared as a real directory Node resolves like any other package.
+const sharedInModules = path.join(resourcesDir, 'server', 'node_modules', '@nohm', 'shared');
+rmSync(sharedInModules, { recursive: true, force: true });
+mkdirSync(path.dirname(sharedInModules), { recursive: true });
+cpSync(path.join(resourcesDir, 'shared'), sharedInModules, { recursive: true });
 
 // 4 — the built SPA.
 if (!existsSync(path.join(root, 'client', 'dist', 'index.html'))) {
