@@ -1,53 +1,72 @@
-# Décision Windows : Tauri 2
+# Application Windows autonome
 
-| Critère | Tauri 2 | Electron | Décision |
-|---|---|---|---|
-| Moteur Web | WebView2 du système | Chromium embarqué | avantage Tauri pour la taille |
-| Tray / instance unique | plugins officiels | API intégrées | équivalent fonctionnel |
-| Démarrage automatique | plugin officiel | API intégrée | équivalent fonctionnel |
-| Mise à jour | plugin + artefacts signés | `autoUpdater` | infrastructure requise dans les deux cas |
-| Backend Node existant | sidecar à préparer | naturel dans le main process | avantage Electron |
-| Empreinte attendue | plus faible, à mesurer | plus élevée, à mesurer | Tauri retenu sous réserve de mesure |
+Nohm se package en **application Windows autonome** : une coque Tauri 2 (WebView2 du système) qui
+lance le serveur Node embarqué en *sidecar*. Rien à installer ni à démarrer à côté — double-clic sur
+l'installateur, puis Nohm se lance depuis le menu Démarrer ou la zone de notification.
 
-Tauri est retenu parce que Nohm est principalement une UI locale et que WebView2 est déjà présent
-sur Windows 10/11. L’écart réel de mémoire, CPU, GPU et taille d’installateur devra être mesuré sur
-deux builds équivalents avant de figer la décision à long terme.
+## Ce que fait la coque
 
-## Présent dans le scaffold
+- démarre `node tsx server/src/index.ts` depuis les ressources embarquées, avec l'état écrit dans
+  `%APPDATA%\Nohm` (l'exécutable sous *Program Files* est en lecture seule) ;
+- attend que le serveur écoute sur `127.0.0.1:4821`, puis affiche la fenêtre ;
+- tray Ouvrir / Mode jeu / Quitter, instance unique, fermeture vers le tray, démarrage auto ;
+- au lancement, vérifie les mises à jour et installe la nouvelle version en silence
+  (redémarrage automatique).
 
-- identité `fr.nohm.app` et fenêtres Nohm ;
-- icônes PNG/ICO et assets Windows générés ;
-- une seule instance, fermeture vers le tray et lancement automatique ;
-- menu Ouvrir / Mode jeu / Quitter ;
-- cibles MSI et NSIS et artefacts d’updater configurés.
+Config / identifiants : ils vont **une seule fois** dans `%APPDATA%\Nohm\.env` (voir
+`server/.env.example`, copié à côté au premier lancement). Ensuite, Paramètres → Comptes →
+« Connecter ».
 
-## État de l’installateur
+## Construire en local
 
-Un workflow GitHub Actions (`.github/workflows/desktop.yml`) compile la coque sur `windows-latest`
-(qui fournit Rust et WebView2) et publie un **brouillon** de Release avec les installateurs NSIS et
-MSI. Il se déclenche manuellement (`workflow_dispatch`) ou en poussant un tag `v*`.
+Prérequis : Rust stable + les prérequis Tauri Windows (Visual Studio Build Tools, WebView2).
 
-La coque charge `http://127.0.0.1:4821` : l’application empaquetée **enveloppe un serveur lancé
-séparément** (`npm start`, ou un service Windows). Elle apporte la fenêtre, le tray, le démarrage
-automatique, l’instance unique et le raccourci mode jeu.
+```bash
+npm ci
+npm run desktop:build
+```
 
-## Limites actuelles
+`tauri build` exécute `beforeBuildCommand` : `npm run build` puis
+`src-tauri/scripts/prepare-resources.mjs`, qui met en scène :
 
-- La machine de travail ne possède pas `rustc` ni `cargo` : le code Rust n’a pas été compilé ici,
+| Chemin | Contenu |
+|---|---|
+| `src-tauri/binaries/node-x86_64-pc-windows-msvc.exe` | le runtime Node (copie de celui qui lance le script) |
+| `src-tauri/resources/server/` | `server/src` + un `node_modules` de production autonome |
+| `src-tauri/resources/shared/` | source de `@nohm/shared` |
+| `src-tauri/resources/client/` | le SPA compilé (`client/dist`) |
+
+Tout ça est gitignoré. L'installateur sort dans
+`src-tauri/target/release/bundle/nsis/`.
+
+`npm run desktop:dev` pointe la fenêtre sur le serveur de dev (`5173`, qui proxifie `/api` vers
+`4822`) et ne démarre pas de sidecar — le stack de dev habituel suffit.
+
+## Publier une version (CI)
+
+Le workflow `.github/workflows/desktop.yml` compile sur `windows-latest` et publie une Release
+**brouillon** avec l'installateur NSIS + les artefacts d'updater (`.zip` signé + `latest.json`).
+Déclenchement : `workflow_dispatch`, ou un tag `v*`.
+
+Secrets requis sur le dépôt (Settings → Secrets and variables → Actions) :
+
+| Secret | Valeur |
+|---|---|
+| `TAURI_SIGNING_PRIVATE_KEY` | le contenu de `src-tauri/.nohm-updater.key` (généré localement, **jamais commité**) |
+| `TAURI_SIGNING_PRIVATE_KEY_PASSWORD` | son mot de passe (chaîne vide si la clé n'en a pas) |
+
+La clé publique correspondante est déjà dans `tauri.conf.json` (`plugins.updater.pubkey`).
+Régénérer la paire : `npx @tauri-apps/cli signer generate -w src-tauri/.nohm-updater.key`
+(puis remplacer `pubkey` par le contenu du `.pub`).
+
+L'updater lit `https://github.com/LeVraiLunatix/nohm/releases/latest/download/latest.json` :
+il faut donc **publier** (dé-brouillonner) chaque Release pour que les clients la voient.
+
+## Limites connues
+
+- Rust n'est pas installé sur la machine de dev : le code de `src-tauri/` n'a pas été compilé ici,
   le premier passage CI peut demander une itération.
-- Express n’est pas encore empaqueté en **sidecar**. Étapes : bundler `server/src/index.ts` avec
-  esbuild (garder `node-pty` en externe, il est natif), embarquer un `node.exe` portable +
-  `node-pty`, ajouter le tout en `resources` de `tauri.conf.json`, et faire spawn/kill le process
-  depuis `src-tauri/src/lib.rs` (attendre `:4821` avant d’afficher la fenêtre).
-- La mise à jour automatique (`createUpdaterArtifacts` est à `false`) exige une clé de signature et
-  un endpoint HTTPS. Rien n’a été ajouté.
-
-## Étapes de production
-
-1. installer Rust stable et les prérequis Tauri Windows ;
-2. compiler et corriger les éventuelles différences d’API ;
-3. produire le sidecar serveur et ses migrations ;
-4. tester tray, démarrage auto, raccourcis et instance unique sur Windows 10 et 11 ;
-5. signer MSI/NSIS et l’updater ;
-6. mesurer démarrage, mémoire, CPU, GPU et taille face à un prototype Electron.
-
+- Sans `DATABASE_URL`, l'app tourne en mode mémoire : l'historique et les tendances repartent de
+  zéro à chaque redémarrage. (SQLite embarqué = étape suivante possible.)
+- L'installateur est `currentUser` (pas d'élévation), installé sous
+  `%LOCALAPPDATA%\Programs\Nohm`.

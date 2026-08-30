@@ -6,7 +6,7 @@
   "build": {
     "beforeDevCommand": "npm run dev",
     "devUrl": "http://127.0.0.1:5173",
-    "beforeBuildCommand": "npm run build",
+    "beforeBuildCommand": "npm run build && node src-tauri/scripts/prepare-resources.mjs",
     "frontendDist": "../client/dist"
   },
   "app": {
@@ -20,7 +20,7 @@
         "minWidth": 900,
         "minHeight": 640,
         "center": true,
-        "visible": true
+        "visible": false
       }
     ],
     "security": {
@@ -29,15 +29,25 @@
   },
   "bundle": {
     "active": true,
-    "targets": ["nsis", "msi"],
-    "createUpdaterArtifacts": false,
+    "targets": ["nsis"],
+    "createUpdaterArtifacts": true,
     "icon": ["icons/icon.png"],
     "shortDescription": "Centre de contrôle personnel local",
     "longDescription": "Nohm rassemble localement vos données, projets, outils d’IA, jeux et services musicaux.",
+    "externalBin": ["binaries/node"],
+    "resources": ["resources/server", "resources/shared", "resources/client"],
     "windows": {
       "nsis": {
         "installMode": "currentUser"
       }
+    }
+  },
+  "plugins": {
+    "updater": {
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDg2RjFGRUQ3Qjg2M0REOUEKUldTYTNXTzQxLzd4aHZRdmgvWTh2NWpoZVhLVG1mNEZ6NDI5eHZpYk85NWx5NDBRTTAxdmpmWEoK",
+      "endpoints": [
+        "https://github.com/LeVraiLunatix/nohm/releases/latest/download/latest.json"
+      ]
     }
   }
 }

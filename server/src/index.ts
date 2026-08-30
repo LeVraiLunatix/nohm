@@ -1,5 +1,4 @@
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
 import { createHash, randomBytes } from 'node:crypto';
 import express from 'express';
 import { google } from 'googleapis';
@@ -13,7 +12,7 @@ import {
 import { createWidgetEventStream } from './widgetEvents.js';
 import { persistProviderHistory } from './providerHistory.js';
 import { loadConfig } from './config.js';
-import { dataDir } from './paths.js';
+import { dataDir, clientDistDir } from './paths.js';
 import { loadEnv } from './env.js';
 import { createDatabase } from './db/client.js';
 import { migrateDatabase } from './db/migrate.js';
@@ -669,8 +668,7 @@ app.post('/api/widgets/:id/refresh', async (req, res) => {
 });
 
 if (env.isProduction) {
-  const dirname = path.dirname(fileURLToPath(import.meta.url));
-  const clientDist = path.resolve(dirname, '../../client/dist');
+  const clientDist = clientDistDir;
   app.use(express.static(clientDist));
   app.get(/^\/(?!api\/).*/, (req, res, next) => {
     // SPA fallback for navigations only. A request for a file that isn't on disk — a stale

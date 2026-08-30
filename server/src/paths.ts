@@ -25,3 +25,7 @@ export const configFile = override ? path.join(override, 'config.json') : path.j
 
 /** The .env to load. Dev leaves this to dotenv's cwd default; the packaged app needs it explicit. */
 export const envFile = override ? path.join(override, '.env') : path.join(serverRoot, '.env');
+
+/** Built SPA served in production. `NOHM_CLIENT_DIST` lets the packaged app point at the copy
+ *  bundled next to the executable instead of the repo's client/dist. */
+export const clientDistDir = process.env.NOHM_CLIENT_DIST?.trim() || path.resolve(serverRoot, '../client/dist');

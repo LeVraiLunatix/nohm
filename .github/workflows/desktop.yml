@@ -1,10 +1,14 @@
 name: Desktop (Windows installer)
 
-# Builds the Tauri shell into NSIS + MSI installers. The shell loads http://127.0.0.1:4821, so
-# the packaged app wraps a locally-run `npm start` server (or a Windows service) — bundling the
-# Express server as a sidecar is the next step, see docs/WINDOWS.md.
+# Builds the standalone Nohm Windows app: a Tauri shell that spawns the bundled Node server as a
+# sidecar (see src-tauri/scripts/prepare-resources.mjs). Produces an NSIS installer plus the
+# updater artifacts (the signed .zip and latest.json), and publishes a draft GitHub Release.
 #
-# Triggered manually, or by pushing a tag like `v0.1.0`. Publishes a **draft** GitHub Release.
+# Triggered manually, or by pushing a tag like `v0.1.0`.
+#
+# Required repo secrets:
+#   TAURI_SIGNING_PRIVATE_KEY           contents of src-tauri/.nohm-updater.key
+#   TAURI_SIGNING_PRIVATE_KEY_PASSWORD  its password (empty string if the key has none)
 
 on:
   workflow_dispatch:
@@ -48,20 +52,24 @@ jobs:
 
       - run: npm ci
 
-      # The window points at the local server, which serves this build of the client.
-      - run: npm run build -w client
+      # tauri.conf.json's beforeBuildCommand runs `npm run build` + prepare-resources.mjs, but do
+      # the client build here too so a failure is reported before the Rust compile starts.
+      - run: npm run build
 
-      - name: Build installers + draft release
+      - name: Build installer + draft release
         uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         with:
           tagName: ${{ steps.rel.outputs.tag }}
           releaseName: ${{ steps.rel.outputs.name }}
           releaseBody: |
-            Installateur Windows de la coque Nohm (NSIS + MSI).
-            La coque ouvre http://127.0.0.1:4821 : lancez le serveur avec `npm start`
-            (ou en service Windows) avant d'ouvrir l'app. Voir docs/WINDOWS.md.
+            Application Windows autonome de Nohm (installateur NSIS).
+            Le serveur est embarqué : rien à lancer à côté. Mises à jour automatiques
+            au démarrage à partir des prochaines versions.
           releaseDraft: true
           prerelease: false
           projectPath: .
+          includeUpdaterJson: true

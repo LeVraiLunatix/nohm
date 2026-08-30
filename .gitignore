@@ -28,6 +28,15 @@ server/.valorant-history-backup-*.json
 src-tauri/target/
 src-tauri/gen/
 
+# Tauri updater signing key — the .pub content lives in tauri.conf.json; the private
+# key goes into the TAURI_SIGNING_PRIVATE_KEY GitHub secret, never here.
+src-tauri/.nohm-updater.key
+src-tauri/.nohm-updater.key.pub
+
+# Staged for the Windows bundle by src-tauri/scripts/prepare-resources.mjs
+src-tauri/binaries/
+src-tauri/resources/
+
 # Logs & OS noise
 *.log
 .DS_Store
