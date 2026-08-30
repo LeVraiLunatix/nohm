@@ -3,6 +3,7 @@ import { GitHubMark } from '../components/GitHubMark';
 import { CalendarMark } from '../components/CalendarMark';
 import { CLASH_ROYALE_APP_ICON_URL } from '../lib/clashRoyale';
 import { publicAsset } from '../lib/publicAsset';
+import { useMusicProvider } from './settings/preferences';
 import { AiOverview } from './ai/AiOverview';
 import { GitHubOverview } from './github/GitHubOverview';
 import { MusicOverview } from './music/MusicOverview';
@@ -180,6 +181,7 @@ export function SteamGradientDefs() {
     a handful of brand colors next to a handful of plain glyphs). */
 export function SectionIcon({ id, monochrome = false }: Readonly<{ id: SectionId; monochrome?: boolean }>) {
   const maskId = useId();
+  const musicProvider = useMusicProvider();
   switch (id) {
     case 'ai': {
     return (
@@ -195,16 +197,28 @@ export function SectionIcon({ id, monochrome = false }: Readonly<{ id: SectionId
     );
   }
     case 'spotify': {
-    if (monochrome) {
+    // The "Musique" space follows the provider chosen in Settings — a Spotify mark only when
+    // Spotify is the active service, a neutral note otherwise (Cider / Apple Music, Last.fm).
+    if (musicProvider === 'spotify') {
+      if (monochrome) {
+        return (
+          <svg viewBox="0 0 24 24" aria-hidden className="h-5 w-5" fill="currentColor">
+            <path d="M19.098 10.638c-3.868-2.297-10.248-2.508-13.941-1.387-.593.18-1.22-.155-1.399-.748-.18-.593.154-1.22.748-1.4 4.239-1.287 11.285-1.038 15.738 1.605.533.317.708 1.005.392 1.538-.316.533-1.005.709-1.538.392zm-.126 3.403c-.272.44-.847.578-1.287.308-3.225-1.982-8.142-2.557-11.958-1.399-.494.15-1.017-.129-1.167-.623-.149-.495.13-1.016.624-1.167 4.358-1.322 9.776-.682 13.48 1.595.44.27.578.847.308 1.286zm-1.469 3.267c-.215.354-.676.465-1.028.249-2.818-1.722-6.365-2.111-10.542-1.157-.402.092-.803-.16-.895-.562-.092-.403.159-.804.562-.896 4.571-1.045 8.492-.595 11.655 1.338.353.215.464.676.248 1.028zm-5.503-17.308c-6.627 0-12 5.373-12 12 0 6.628 5.373 12 12 12 6.628 0 12-5.372 12-12 0-6.627-5.372-12-12-12z" />
+          </svg>
+        );
+      }
+      return <img src={publicAsset('spotify/icon.svg')} alt="" aria-hidden className="h-5 w-5" />;
+    }
+    {
+      const color = monochrome ? 'currentColor' : 'var(--accent)';
       return (
-        <svg viewBox="0 0 24 24" aria-hidden className="h-5 w-5" fill="currentColor">
-          <path d="M19.098 10.638c-3.868-2.297-10.248-2.508-13.941-1.387-.593.18-1.22-.155-1.399-.748-.18-.593.154-1.22.748-1.4 4.239-1.287 11.285-1.038 15.738 1.605.533.317.708 1.005.392 1.538-.316.533-1.005.709-1.538.392zm-.126 3.403c-.272.44-.847.578-1.287.308-3.225-1.982-8.142-2.557-11.958-1.399-.494.15-1.017-.129-1.167-.623-.149-.495.13-1.016.624-1.167 4.358-1.322 9.776-.682 13.48 1.595.44.27.578.847.308 1.286zm-1.469 3.267c-.215.354-.676.465-1.028.249-2.818-1.722-6.365-2.111-10.542-1.157-.402.092-.803-.16-.895-.562-.092-.403.159-.804.562-.896 4.571-1.045 8.492-.595 11.655 1.338.353.215.464.676.248 1.028zm-5.503-17.308c-6.627 0-12 5.373-12 12 0 6.628 5.373 12 12 12 6.628 0 12-5.372 12-12 0-6.627-5.372-12-12-12z" />
+        <svg viewBox="0 0 24 24" aria-hidden className="h-5 w-5">
+          <path d="M9 17.5V5.2l11-2.2v12.3" fill="none" stroke={color} strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
+          <circle cx="6.25" cy="17.5" r="2.75" fill={color} />
+          <circle cx="17.25" cy="15.3" r="2.75" fill={color} />
         </svg>
       );
     }
-    return (
-      <img src={publicAsset('spotify/icon.svg')} alt="" aria-hidden className="h-5 w-5" />
-    );
   }
     case 'weather': {
     const accent = monochrome ? 'currentColor' : 'var(--accent)';
