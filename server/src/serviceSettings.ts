@@ -166,7 +166,24 @@ export class ServiceSettingsStore {
   }
 
   async set(id: ConfigurableServiceId, values: Record<string, string>): Promise<void> {
+    // Mirror the change into process.env so helpers that read it (OAuth client ids, public URL)
+    // pick a save up without a restart, the same way applyServiceSettingsToEnvironment seeds it.
+    for (const [key, value] of Object.entries(values)) process.env[key] = value;
     this.settings = { ...this.settings, [id]: values };
+    await this.persist();
+  }
+
+  /** Wipe a service's stored fields entirely (the "Effacer" button). */
+  async remove(id: ConfigurableServiceId): Promise<void> {
+    if (!(id in this.settings)) return;
+    for (const key of Object.keys(this.settings[id] ?? {})) delete process.env[key];
+    const next = { ...this.settings };
+    delete next[id];
+    this.settings = next;
+    await this.persist();
+  }
+
+  private async persist(): Promise<void> {
     const protectedData = await this.codec.protect(JSON.stringify(this.settings));
     await mkdir(path.dirname(this.filePath), { recursive: true, mode: 0o700 });
     await writeFile(this.filePath, JSON.stringify({ version: 1, protectedData } satisfies SettingsEnvelope), { encoding: 'utf8', mode: 0o600 });

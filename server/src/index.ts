@@ -275,8 +275,14 @@ app.post('/api/settings/oauth/github/device', async (_req, res) => {
       headers: { accept: 'application/json', 'content-type': 'application/x-www-form-urlencoded' },
       body: new URLSearchParams({ client_id: clientId, scope: GITHUB_DEVICE_SCOPE }),
     });
-    const body = (await response.json()) as { device_code?: string; user_code?: string; verification_uri?: string; interval?: number; expires_in?: number };
-    if (!response.ok || !body.device_code || !body.user_code || !body.verification_uri) throw new Error('device code request failed');
+    const body = (await response.json().catch(() => ({}))) as { device_code?: string; user_code?: string; verification_uri?: string; interval?: number; expires_in?: number; error?: string };
+    // GitHub answers an unknown client id with 404 {"error":"Not Found"} or `error:
+    // "unauthorized_client"` — the id is wrong, not a transient upstream failure.
+    if (response.status === 404 || body.error === 'unauthorized_client' || (!response.ok && !body.device_code)) {
+      res.status(400).json({ error: 'github-client-id-invalid' });
+      return;
+    }
+    if (!body.device_code || !body.user_code || !body.verification_uri) throw new Error('device code request failed');
     res.json({
       deviceCode: body.device_code,
       userCode: body.user_code,
@@ -397,6 +403,20 @@ app.put('/api/settings/services/:serviceId', async (req, res) => {
   try {
     await serviceSettingsStore.set(serviceId, parsed.data as Record<string, string>);
     res.json({ ok: true, configured: true, restartRequired: true });
+  } catch {
+    res.status(500).json({ error: 'settings-save-failed' });
+  }
+});
+
+app.delete('/api/settings/services/:serviceId', async (req, res) => {
+  const { serviceId } = req.params;
+  if (!isConfigurableServiceId(serviceId)) {
+    res.status(404).json({ error: 'unknown-service' });
+    return;
+  }
+  try {
+    await serviceSettingsStore.remove(serviceId);
+    res.json({ ok: true, restartRequired: true });
   } catch {
     res.status(500).json({ error: 'settings-save-failed' });
   }

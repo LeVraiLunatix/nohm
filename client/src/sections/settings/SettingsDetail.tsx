@@ -94,6 +94,7 @@ export function SettingsDetail() {
     try {
       const start = await fetch('/api/settings/oauth/github/device', { method: 'POST' });
       if (start.status === 409) { setPanelMsg(t('settings.githubNeedsClientId')); return; }
+      if (start.status === 400) { setPanelMsg(t('settings.githubBadClientId')); return; }
       if (!start.ok) throw new Error('device start failed');
       const device = await start.json() as { userCode: string; verificationUri: string; deviceCode: string; interval: number; expiresIn: number };
       setGithubCode(device.userCode);
@@ -183,6 +184,18 @@ export function SettingsDetail() {
     await persistValues();
   };
 
+  const forgetService = async () => {
+    if (!editing) return;
+    const id = editing.id;
+    setEditing(null);
+    try {
+      await fetch(`/api/settings/services/${encodeURIComponent(id)}`, { method: 'DELETE' });
+    } finally {
+      setConfigured((current) => current.filter((entry) => entry !== id));
+      refreshStatus();
+    }
+  };
+
   const verifyConnection = async () => {
     if (!editing) return;
     setPanelMsg(null);
@@ -252,6 +265,7 @@ export function SettingsDetail() {
           {editing.oauth === 'github' && <button type="button" className="settings-button settings-button--ghost" disabled={githubBusy} onClick={() => void connectGitHub()}>{githubBusy ? t('settings.githubConnecting') : t('settings.githubSignIn')}</button>}
           {editing.oauth === 'steam' && <button type="button" className="settings-button settings-button--ghost" onClick={() => window.open('/api/settings/oauth/steam/start', '_blank', 'noopener,noreferrer')}>{t('settings.steamSignIn')}</button>}
           {(editing.oauth === 'gmail' || editing.oauth === 'spotify' || editing.oauth === 'lastfm') && <button type="button" className="settings-button settings-button--ghost" disabled={!oauthReady.includes(editing.oauth)} onClick={() => window.open(`/api/settings/oauth/${editing.oauth}/start`, '_blank', 'noopener,noreferrer')}>{oauthReady.includes(editing.oauth) ? t('settings.oauthConnect') : t('settings.oauthAfterRestart')}</button>}
+          {editingConfigured && <button type="button" className="settings-button settings-button--ghost" onClick={() => void forgetService()}>{t('settings.forget')}</button>}
           {editing.widgetIds[0] && <button type="button" className="settings-button settings-button--ghost" disabled={verifying || saveState === 'saving'} onClick={() => void verifyConnection()}>{verifying ? t('settings.verifying') : t('settings.verify')}</button>}
           <button type="submit" className="settings-button" disabled={saveState === 'saving'}>{saveState === 'saving' ? t('settings.saving') : t('settings.saveShort')}</button>
         </div>
