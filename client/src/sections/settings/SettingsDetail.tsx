@@ -27,6 +27,7 @@ export function SettingsDetail() {
   const [values, setValues] = useState<Record<string, string>>({});
   const [saveState, setSaveState] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
   const [locating, setLocating] = useState(false);
+  const [verifying, setVerifying] = useState(false);
   const [panelMsg, setPanelMsg] = useState<string | null>(null);
   const [githubCode, setGithubCode] = useState<string | null>(null);
   const [githubBusy, setGithubBusy] = useState(false);
@@ -156,11 +157,10 @@ export function SettingsDetail() {
     }
   };
 
-  const saveConnection = async () => {
-    if (!editing) return;
+  const persistValues = async (): Promise<boolean> => {
+    if (!editing) return false;
     const payload = Object.fromEntries(Object.entries(values).filter(([, value]) => value !== ''));
-    // Editing an already-connected service and nothing was typed: nothing to change.
-    if (editingConfigured && Object.keys(payload).length === 0) { setEditing(null); return; }
+    if (Object.keys(payload).length === 0) return true; // nothing typed — nothing to save
     setSaveState('saving');
     try {
       const response = await fetch(`/api/settings/services/${encodeURIComponent(editing.id)}`, { method: 'PUT', headers: { 'content-type': 'application/json' }, body: JSON.stringify(payload) });
@@ -169,8 +169,38 @@ export function SettingsDetail() {
       setValues({});
       setSaveState('saved');
       refreshStatus();
+      return true;
     } catch {
       setSaveState('error');
+      return false;
+    }
+  };
+
+  const saveConnection = async () => {
+    if (!editing) return;
+    const nothingTyped = Object.values(values).every((v) => v === '');
+    if (editingConfigured && nothingTyped) { setEditing(null); return; }
+    await persistValues();
+  };
+
+  const verifyConnection = async () => {
+    if (!editing) return;
+    setPanelMsg(null);
+    if (!(await persistValues())) return;
+    const widgetId = editing.widgetIds[0];
+    if (!widgetId) return;
+    setVerifying(true);
+    try {
+      const res = await fetch(`/api/widgets/${encodeURIComponent(widgetId)}/refresh`, { method: 'POST' });
+      const envelope = res.ok ? (await res.json() as { status?: string; error?: string }) : null;
+      if (envelope?.status === 'ready' || envelope?.status === 'stale') setPanelMsg(t('settings.verifyOk'));
+      else if (envelope?.status === 'disabled') setPanelMsg(t('settings.verifyDisabled'));
+      else setPanelMsg(t('settings.verifyFailed', { error: envelope?.error ?? '—' }));
+      refreshStatus();
+    } catch {
+      setPanelMsg(t('settings.verifyFailed', { error: '—' }));
+    } finally {
+      setVerifying(false);
     }
   };
 
@@ -222,7 +252,8 @@ export function SettingsDetail() {
           {editing.oauth === 'github' && <button type="button" className="settings-button settings-button--ghost" disabled={githubBusy} onClick={() => void connectGitHub()}>{githubBusy ? t('settings.githubConnecting') : t('settings.githubSignIn')}</button>}
           {editing.oauth === 'steam' && <button type="button" className="settings-button settings-button--ghost" onClick={() => window.open('/api/settings/oauth/steam/start', '_blank', 'noopener,noreferrer')}>{t('settings.steamSignIn')}</button>}
           {(editing.oauth === 'gmail' || editing.oauth === 'spotify' || editing.oauth === 'lastfm') && <button type="button" className="settings-button settings-button--ghost" disabled={!oauthReady.includes(editing.oauth)} onClick={() => window.open(`/api/settings/oauth/${editing.oauth}/start`, '_blank', 'noopener,noreferrer')}>{oauthReady.includes(editing.oauth) ? t('settings.oauthConnect') : t('settings.oauthAfterRestart')}</button>}
-          <button type="submit" className="settings-button" disabled={saveState === 'saving'}>{saveState === 'saving' ? t('settings.saving') : t('settings.save')}</button>
+          {editing.widgetIds[0] && <button type="button" className="settings-button settings-button--ghost" disabled={verifying || saveState === 'saving'} onClick={() => void verifyConnection()}>{verifying ? t('settings.verifying') : t('settings.verify')}</button>}
+          <button type="submit" className="settings-button" disabled={saveState === 'saving'}>{saveState === 'saving' ? t('settings.saving') : t('settings.saveShort')}</button>
         </div>
       </div>
     </form>

@@ -1,6 +1,5 @@
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { randomBytes } from 'node:crypto';
 import express from 'express';
 import { google } from 'googleapis';
 import { z } from 'zod';
@@ -35,6 +34,7 @@ import {
 import { writeSpotifyToken } from './spotifyToken.js';
 import { writeGmailToken } from './gmailToken.js';
 import { md5Hex } from './md5.js';
+import { signOAuthState, verifyOAuthState } from './oauthState.js';
 
 // A transient network blip (e.g. a Postgres socket erroring outside any awaited query, as seen
 // with Railway's TCP proxy) otherwise crashes the whole process — Node treats an unhandled
@@ -49,9 +49,8 @@ process.on('uncaughtException', (error) => {
   console.error('[server] uncaught exception:', error);
 });
 
-const serviceSettingsStore = new ServiceSettingsStore(
-  path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../.data/service-settings.json'),
-);
+const dataDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../.data');
+const serviceSettingsStore = new ServiceSettingsStore(path.join(dataDir, 'service-settings.json'));
 const storedServiceSettings = await serviceSettingsStore.load();
 applyServiceSettingsToEnvironment(storedServiceSettings);
 const env = loadEnv();
@@ -110,7 +109,6 @@ const layoutStore = new LayoutStore(
 );
 const ownedReposCache = createOwnedReposCache();
 
-const AI_USAGE_WIDGET_IDS = new Set(['ai-usage-claude', 'ai-usage-codex']);
 
 app.get('/api/health', (_req, res) => {
   res.json({ ok: true });
@@ -176,31 +174,26 @@ app.get('/api/settings/services', (_req, res) => {
   });
 });
 
-const oauthStates = new Map<string, { service: 'gmail' | 'spotify'; expiresAt: number }>();
 const oauthRedirect = (service: 'gmail' | 'spotify') => `${publicBaseUrl()}/api/settings/oauth/${service}/callback`;
 const oauthResultPage = (title: string, detail: string) => `<!doctype html><html lang="fr"><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>${title}</title><style>body{margin:0;min-height:100vh;display:grid;place-items:center;background:#090a10;color:#f6f5fb;font:16px system-ui}.card{max-width:34rem;margin:1rem;padding:2rem;border:1px solid #292b38;border-radius:24px;background:#12131c;box-shadow:0 24px 80px #0008}h1{margin:0 0 .6rem;font-size:1.6rem}p{color:#aaaebe;line-height:1.5}button{border:0;border-radius:12px;padding:.7rem 1rem;background:#736bff;color:white;font-weight:700;cursor:pointer}</style><main class="card"><h1>${title}</h1><p>${detail}</p><button onclick="window.close()">Fermer cet onglet</button></main></html>`;
 
 app.get('/api/settings/oauth/spotify/start', (_req, res) => {
   const creds = spotifyCreds();
   if (!creds) { res.status(409).send(oauthResultPage('Spotify n’est pas prêt', 'Enregistrez d’abord l’ID client et le secret Spotify.')); return; }
-  const state = randomBytes(24).toString('base64url');
-  oauthStates.set(state, { service: 'spotify', expiresAt: Date.now() + 10 * 60_000 });
   const url = new URL('https://accounts.spotify.com/authorize');
   url.searchParams.set('response_type', 'code');
   url.searchParams.set('client_id', creds.clientId);
   url.searchParams.set('scope', 'user-read-currently-playing user-read-recently-played user-top-read');
   url.searchParams.set('redirect_uri', oauthRedirect('spotify'));
-  url.searchParams.set('state', state);
+  url.searchParams.set('state', signOAuthState(dataDir, 'spotify'));
   res.redirect(url.toString());
 });
 
 app.get('/api/settings/oauth/spotify/callback', async (req, res) => {
   const state = typeof req.query.state === 'string' ? req.query.state : '';
-  const entry = oauthStates.get(state);
-  oauthStates.delete(state);
   const code = typeof req.query.code === 'string' ? req.query.code : '';
   const creds = spotifyCreds();
-  if (!creds || !entry || entry.service !== 'spotify' || entry.expiresAt < Date.now() || !code) { res.status(400).send(oauthResultPage('Connexion refusée', 'La demande Spotify a expiré ou a été annulée.')); return; }
+  if (!creds || !verifyOAuthState(dataDir, state, 'spotify') || !code) { res.status(400).send(oauthResultPage('Connexion refusée', 'La demande Spotify a expiré ou a été annulée.')); return; }
   try {
     const response = await fetch('https://accounts.spotify.com/api/token', { method: 'POST', headers: { 'content-type': 'application/x-www-form-urlencoded', authorization: `Basic ${Buffer.from(`${creds.clientId}:${creds.clientSecret}`).toString('base64')}` }, body: new URLSearchParams({ grant_type: 'authorization_code', code, redirect_uri: oauthRedirect('spotify') }) });
     const token = await response.json() as { access_token?: string; refresh_token?: string; expires_in?: number };
@@ -213,19 +206,15 @@ app.get('/api/settings/oauth/spotify/callback', async (req, res) => {
 app.get('/api/settings/oauth/gmail/start', (_req, res) => {
   const creds = googleCreds();
   if (!creds) { res.status(409).send(oauthResultPage('Gmail n’est pas prêt', 'Enregistrez d’abord l’ID client et le secret Google.')); return; }
-  const state = randomBytes(24).toString('base64url');
-  oauthStates.set(state, { service: 'gmail', expiresAt: Date.now() + 10 * 60_000 });
   const auth = new google.auth.OAuth2(creds.clientId, creds.clientSecret, oauthRedirect('gmail'));
-  res.redirect(auth.generateAuthUrl({ access_type: 'offline', prompt: 'consent', state, scope: ['https://www.googleapis.com/auth/gmail.metadata'] }));
+  res.redirect(auth.generateAuthUrl({ access_type: 'offline', prompt: 'consent', state: signOAuthState(dataDir, 'gmail'), scope: ['https://www.googleapis.com/auth/gmail.metadata'] }));
 });
 
 app.get('/api/settings/oauth/gmail/callback', async (req, res) => {
   const state = typeof req.query.state === 'string' ? req.query.state : '';
-  const entry = oauthStates.get(state);
-  oauthStates.delete(state);
   const code = typeof req.query.code === 'string' ? req.query.code : '';
   const creds = googleCreds();
-  if (!creds || !entry || entry.service !== 'gmail' || entry.expiresAt < Date.now() || !code) { res.status(400).send(oauthResultPage('Connexion refusée', 'La demande Google a expiré ou a été annulée.')); return; }
+  if (!creds || !verifyOAuthState(dataDir, state, 'gmail') || !code) { res.status(400).send(oauthResultPage('Connexion refusée', 'La demande Google a expiré ou a été annulée.')); return; }
   try {
     const auth = new google.auth.OAuth2(creds.clientId, creds.clientSecret, oauthRedirect('gmail'));
     const { tokens } = await auth.getToken(code);
@@ -620,18 +609,15 @@ app.post('/api/code/actions', async (req, res) => {
 });
 
 app.post('/api/widgets/:id/refresh', async (req, res) => {
-  if (!AI_USAGE_WIDGET_IDS.has(req.params.id)) {
-    res.status(404).json({ error: 'refresh-not-supported' });
-    return;
-  }
-
-  await scheduler.refresh(req.params.id, true);
-  const envelope = scheduler.getEnvelope(req.params.id);
-  if (!envelope) {
+  // Any registered widget can be force-refreshed — the "Vérifier" button in Settings and the
+  // AI-usage refresh buttons both hit this. refresh() never throws; it stores the outcome on
+  // the entry, so the envelope we return already reflects success or the sanitized failure.
+  if (!scheduler.getEnvelope(req.params.id)) {
     res.status(404).json({ error: 'unknown-widget' });
     return;
   }
-  res.json(envelope);
+  await scheduler.refresh(req.params.id, true);
+  res.json(scheduler.getEnvelope(req.params.id));
 });
 
 if (env.isProduction) {
