@@ -1,5 +1,5 @@
 import type { HueData, PowerData, SystemData, TransitData } from '@nohm/shared';
-import { hhmm, mulberry32 } from '@nohm/shared';
+import { mulberry32 } from '@nohm/shared';
 
 // ── Hue ──────────────────────────────────────────────────────────────────────────────────────
 
@@ -83,7 +83,9 @@ export function system(now: Date): SystemData {
   return {
     hostname: 'demo-mac', platform: 'darwin', nodeVersion: 'v22.11.0',
     uptimeSeconds: 3 * 86_400 + 4 * 3_600, timezone: 'Europe/Oslo',
-    serverTime: hhmm(now),
+    // Must be a full timestamp: SystemFooter feeds it straight to Intl.DateTimeFormat,
+    // and a time-only string ("19:30") parses to Invalid Date and throws mid-render.
+    serverTime: now.toISOString(),
   };
 }
 

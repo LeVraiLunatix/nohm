@@ -42,7 +42,12 @@ export function I18nProvider({ children }: Readonly<{ children: ReactNode }>) {
       }
       return text;
     },
-    date: (input, options) => new Intl.DateTimeFormat(locale === 'fr' ? 'fr-FR' : 'en-GB', options).format(new Date(input)),
+    date: (input, options) => {
+      const value = new Date(input);
+      // One malformed timestamp shouldn't take the whole render down with a RangeError.
+      if (Number.isNaN(value.getTime())) return '—';
+      return new Intl.DateTimeFormat(locale === 'fr' ? 'fr-FR' : 'en-GB', options).format(value);
+    },
     number: (input, options) => new Intl.NumberFormat(locale === 'fr' ? 'fr-FR' : 'en-GB', options).format(input),
   }), [locale, setLocale]);
 
