@@ -1,6 +1,6 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { tokensDir } from './paths.js';
 
 export interface SpotifyToken {
   access_token: string;
@@ -9,7 +9,7 @@ export interface SpotifyToken {
   expires_at: number;
 }
 
-const tokenDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../.tokens');
+const tokenDir = tokensDir;
 const tokenPath = path.join(tokenDir, 'spotify.json');
 
 export function readSpotifyToken(): SpotifyToken | undefined {

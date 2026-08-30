@@ -1,6 +1,6 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { tokensDir } from './paths.js';
 
 export interface GmailToken {
   refresh_token?: string | null;
@@ -9,7 +9,7 @@ export interface GmailToken {
   [key: string]: unknown;
 }
 
-const tokenDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../.tokens');
+const tokenDir = tokensDir;
 const tokenPath = path.join(tokenDir, 'gmail.json');
 
 export function readGmailToken(): GmailToken | undefined {

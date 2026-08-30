@@ -1,5 +1,10 @@
-import 'dotenv/config';
+import { config as loadDotenv } from 'dotenv';
 import { createHmac } from 'node:crypto';
+import { envFile } from './paths.js';
+
+// Load the .env explicitly (not `dotenv/config`, which only ever looks in the process cwd) so the
+// packaged app finds it under %APPDATA%\Nohm. Existing environment variables always win.
+loadDotenv({ path: envFile, quiet: true });
 
 export interface ServerEnv {
   port: number;

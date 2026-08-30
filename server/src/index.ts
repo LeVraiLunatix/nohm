@@ -13,6 +13,7 @@ import {
 import { createWidgetEventStream } from './widgetEvents.js';
 import { persistProviderHistory } from './providerHistory.js';
 import { loadConfig } from './config.js';
+import { dataDir } from './paths.js';
 import { loadEnv } from './env.js';
 import { createDatabase } from './db/client.js';
 import { migrateDatabase } from './db/migrate.js';
@@ -50,7 +51,6 @@ process.on('uncaughtException', (error) => {
   console.error('[server] uncaught exception:', error);
 });
 
-const dataDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../.data');
 const serviceSettingsStore = new ServiceSettingsStore(path.join(dataDir, 'service-settings.json'));
 const storedServiceSettings = await serviceSettingsStore.load();
 applyServiceSettingsToEnvironment(storedServiceSettings);
@@ -105,9 +105,7 @@ scheduler.onSettled((id) => {
   commandCenterSettleTimer.unref?.();
 });
 scheduler.start();
-const layoutStore = new LayoutStore(
-  path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../.data/layout.json'),
-);
+const layoutStore = new LayoutStore(path.join(dataDir, 'layout.json'));
 const ownedReposCache = createOwnedReposCache();
 
 

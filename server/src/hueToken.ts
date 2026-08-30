@@ -1,6 +1,6 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { tokensDir } from './paths.js';
 
 export interface HueToken {
   access_token: string;
@@ -11,7 +11,7 @@ export interface HueToken {
   username: string;
 }
 
-const tokenDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../.tokens');
+const tokenDir = tokensDir;
 const tokenPath = path.join(tokenDir, 'hue.json');
 
 export function readHueToken(): HueToken | undefined {

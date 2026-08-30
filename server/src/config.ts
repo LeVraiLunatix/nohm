@@ -1,6 +1,5 @@
 import { readFileSync } from 'node:fs';
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { configFile } from './paths.js';
 import { POWER_AREAS } from '@nohm/shared';
 import { z } from 'zod';
 import { DERIVED_PROVIDER_IDS } from './providerHistory.js';
@@ -199,12 +198,8 @@ export type AppConfig = z.infer<typeof configSchema>;
 
 /** Non-secret settings (pinned repos, feeds, …) from server/config.json. */
 export function loadConfig(): AppConfig {
-  const file = path.resolve(
-    path.dirname(fileURLToPath(import.meta.url)),
-    '../config.json',
-  );
   try {
-    return configSchema.parse(JSON.parse(readFileSync(file, 'utf8')));
+    return configSchema.parse(JSON.parse(readFileSync(configFile, 'utf8')));
   } catch (err) {
     if ((err as NodeJS.ErrnoException).code !== 'ENOENT') {
       console.warn('⚠️  Could not read config.json — using defaults.', err);

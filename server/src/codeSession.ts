@@ -2,9 +2,9 @@ import { execFileSync, spawn } from 'node:child_process';
 import { accessSync, constants, existsSync, mkdirSync, readdirSync, writeFileSync } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
 import { z } from 'zod';
 import type { AppConfig } from './config.js';
+import { dataDir } from './paths.js';
 
 const actionSchema = z.object({ repo: z.string(), action: z.enum(['session', 'github-desktop']) });
 const GITHUB_REMOTE_PATTERN = /github\.com[:/]([^/]+\/[^/]+?)(\.git)?\/?$/;
@@ -90,7 +90,7 @@ export async function launchCodeAction(input: unknown, config: AppConfig, platfo
   if (!project) throw new Error('project-not-configured');
   if (action === 'github-desktop') return launch(platform === 'win32' ? 'cmd' : 'open', platform === 'win32' ? ['/c', 'start', '', 'github-desktop:'] : ['-a', 'GitHub Desktop']);
 
-  const directory = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../.data/workspaces');
+  const directory = path.join(dataDir, 'workspaces');
   mkdirSync(directory, { recursive: true });
   const workspace = path.join(directory, `${repo.replaceAll('/', '--')}.code-workspace`);
   writeFileSync(workspace, `${JSON.stringify({
