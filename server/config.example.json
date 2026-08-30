@@ -30,8 +30,11 @@
     }
   },
   "widgets": {
-    "hue": { "enabled": false }
+    "hue": { "enabled": false },
+    "power": { "enabled": false },
+    "transit": { "enabled": false }
   },
+  "_comment_widgets": "power (Nord Pool electricity prices) and transit (Entur) only cover Norway — set enabled:true if that's you; they otherwise fail every poll.",
   "history": {
     "excludeProviders": ["command-center", "activity-push"]
   }
