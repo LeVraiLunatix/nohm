@@ -21,6 +21,7 @@ export function SettingsDetail() {
   const [configured, setConfigured] = useState<string[]>([]);
   const [oauthReady, setOauthReady] = useState<string[]>([]);
   const [callbackBase, setCallbackBase] = useState('');
+  const [callbackBases, setCallbackBases] = useState<string[]>([]);
   const [publicUrlDraft, setPublicUrlDraft] = useState('');
   const [publicUrlState, setPublicUrlState] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
   const [editing, setEditing] = useState<ServiceDefinition | null>(null);
@@ -41,7 +42,7 @@ export function SettingsDetail() {
 
   const refreshStatus = useCallback(() => {
     void fetch('/api/widgets').then((response) => response.ok ? response.json() : { widgets: [] }).then((payload) => setSummaries(payload.widgets ?? [])).catch(() => setSummaries([]));
-    void fetch('/api/settings/services').then((response) => response.ok ? response.json() : { configured: [], oauthReady: [] }).then((payload) => { setConfigured(payload.configured ?? []); setOauthReady(payload.oauthReady ?? []); setCallbackBase(payload.callbackBase ?? ''); }).catch(() => { setConfigured([]); setOauthReady([]); });
+    void fetch('/api/settings/services').then((response) => response.ok ? response.json() : { configured: [], oauthReady: [] }).then((payload) => { setConfigured(payload.configured ?? []); setOauthReady(payload.oauthReady ?? []); setCallbackBase(payload.callbackBase ?? ''); setCallbackBases(payload.callbackBases ?? (payload.callbackBase ? [payload.callbackBase] : [])); }).catch(() => { setConfigured([]); setOauthReady([]); });
   }, []);
 
   const savePublicUrl = async () => {
@@ -248,10 +249,12 @@ export function SettingsDetail() {
           </label>
         ))}
       </div>
-      {(editing.oauth === 'gmail' || editing.oauth === 'spotify' || editing.oauth === 'lastfm' || editing.oauth === 'steam') && callbackBase && (
+      {(editing.oauth === 'gmail' || editing.oauth === 'spotify' || editing.oauth === 'lastfm' || editing.oauth === 'steam') && (callbackBases.length > 0 || callbackBase) && (
         <p className="connection-feedback">
           {t('settings.redirectUri')}<br />
-          <code>{callbackBase}/api/settings/oauth/{editing.oauth}/callback</code>
+          {(callbackBases.length > 0 ? callbackBases : [callbackBase]).map((base) => (
+            <code key={base} style={{ display: 'block' }}>{base}/api/settings/oauth/{editing.oauth}/callback</code>
+          ))}
         </p>
       )}
       <div className="connection-actions">

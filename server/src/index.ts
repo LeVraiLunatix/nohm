@@ -154,6 +154,17 @@ function publicBaseUrl(): string {
   return env.publicUrl ?? `http://127.0.0.1:${env.port}`;
 }
 
+// The origin *this request* arrived on (honouring the headers `tailscale serve` sets), so an OAuth
+// flow started from http://127.0.0.1:4821 comes back to 127.0.0.1 and one started from the tailnet
+// hostname comes back there — `/start` and `/callback` always agree because both read the same
+// request origin. Only when that can't be determined do we fall back to the configured public URL.
+function requestOrigin(req: express.Request): string | null {
+  const proto = String(req.get('x-forwarded-proto') ?? req.protocol ?? '').split(',')[0]!.trim();
+  const host = String(req.get('x-forwarded-host') ?? req.get('host') ?? '').split(',')[0]!.trim();
+  return proto && host ? `${proto}://${host}` : null;
+}
+const callbackBaseFor = (req: express.Request): string => requestOrigin(req) ?? publicBaseUrl();
+
 function lastfmCreds(): { apiKey: string; secret: string } | undefined {
   const s = serviceSettingsStore.get('lastfm');
   const apiKey = s.LASTFM_API_KEY || process.env.LASTFM_API_KEY;
@@ -161,7 +172,11 @@ function lastfmCreds(): { apiKey: string; secret: string } | undefined {
   return apiKey && secret ? { apiKey, secret } : undefined;
 }
 
-app.get('/api/settings/services', (_req, res) => {
+app.get('/api/settings/services', (req, res) => {
+  // Every origin an OAuth flow might be started from needs its callback URL registered with the
+  // provider; list them so the Settings page can show all of them, not just the one for the
+  // page you happen to be on.
+  const bases = [...new Set([callbackBaseFor(req), publicBaseUrl()])];
   res.json({
     configured: configuredServiceIds(),
     oauthReady: [
@@ -170,21 +185,23 @@ app.get('/api/settings/services', (_req, res) => {
       lastfmCreds() ? 'lastfm' : null,
     ].filter(Boolean),
     // What OAuth redirect URIs the user must register with each provider.
-    callbackBase: publicBaseUrl(),
+    callbackBase: bases[0],
+    callbackBases: bases,
   });
 });
 
-const oauthRedirect = (service: 'gmail' | 'spotify') => `${publicBaseUrl()}/api/settings/oauth/${service}/callback`;
+const oauthRedirect = (req: express.Request, service: 'gmail' | 'spotify') =>
+  `${callbackBaseFor(req)}/api/settings/oauth/${service}/callback`;
 const oauthResultPage = (title: string, detail: string) => `<!doctype html><html lang="fr"><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>${title}</title><style>body{margin:0;min-height:100vh;display:grid;place-items:center;background:#090a10;color:#f6f5fb;font:16px system-ui}.card{max-width:34rem;margin:1rem;padding:2rem;border:1px solid #292b38;border-radius:24px;background:#12131c;box-shadow:0 24px 80px #0008}h1{margin:0 0 .6rem;font-size:1.6rem}p{color:#aaaebe;line-height:1.5}button{border:0;border-radius:12px;padding:.7rem 1rem;background:#736bff;color:white;font-weight:700;cursor:pointer}</style><main class="card"><h1>${title}</h1><p>${detail}</p><button onclick="window.close()">Fermer cet onglet</button></main></html>`;
 
-app.get('/api/settings/oauth/spotify/start', (_req, res) => {
+app.get('/api/settings/oauth/spotify/start', (req, res) => {
   const creds = spotifyCreds();
   if (!creds) { res.status(409).send(oauthResultPage('Spotify n’est pas prêt', 'Enregistrez d’abord l’ID client et le secret Spotify.')); return; }
   const url = new URL('https://accounts.spotify.com/authorize');
   url.searchParams.set('response_type', 'code');
   url.searchParams.set('client_id', creds.clientId);
   url.searchParams.set('scope', 'user-read-currently-playing user-read-recently-played user-top-read');
-  url.searchParams.set('redirect_uri', oauthRedirect('spotify'));
+  url.searchParams.set('redirect_uri', oauthRedirect(req, 'spotify'));
   url.searchParams.set('state', signOAuthState(dataDir, 'spotify'));
   res.redirect(url.toString());
 });
@@ -195,7 +212,7 @@ app.get('/api/settings/oauth/spotify/callback', async (req, res) => {
   const creds = spotifyCreds();
   if (!creds || !verifyOAuthState(dataDir, state, 'spotify') || !code) { res.status(400).send(oauthResultPage('Connexion refusée', 'La demande Spotify a expiré ou a été annulée.')); return; }
   try {
-    const response = await fetch('https://accounts.spotify.com/api/token', { method: 'POST', headers: { 'content-type': 'application/x-www-form-urlencoded', authorization: `Basic ${Buffer.from(`${creds.clientId}:${creds.clientSecret}`).toString('base64')}` }, body: new URLSearchParams({ grant_type: 'authorization_code', code, redirect_uri: oauthRedirect('spotify') }) });
+    const response = await fetch('https://accounts.spotify.com/api/token', { method: 'POST', headers: { 'content-type': 'application/x-www-form-urlencoded', authorization: `Basic ${Buffer.from(`${creds.clientId}:${creds.clientSecret}`).toString('base64')}` }, body: new URLSearchParams({ grant_type: 'authorization_code', code, redirect_uri: oauthRedirect(req, 'spotify') }) });
     const token = await response.json() as { access_token?: string; refresh_token?: string; expires_in?: number };
     if (!response.ok || !token.access_token || !token.refresh_token || !token.expires_in) throw new Error('token exchange failed');
     writeSpotifyToken({ access_token: token.access_token, refresh_token: token.refresh_token, expires_at: Date.now() + token.expires_in * 1000 });
@@ -203,10 +220,10 @@ app.get('/api/settings/oauth/spotify/callback', async (req, res) => {
   } catch { res.status(502).send(oauthResultPage('Connexion impossible', 'Spotify n’a pas accepté la connexion. Vérifiez l’URI de redirection dans votre application Spotify.')); }
 });
 
-app.get('/api/settings/oauth/gmail/start', (_req, res) => {
+app.get('/api/settings/oauth/gmail/start', (req, res) => {
   const creds = googleCreds();
   if (!creds) { res.status(409).send(oauthResultPage('Gmail n’est pas prêt', 'Enregistrez d’abord l’ID client et le secret Google.')); return; }
-  const auth = new google.auth.OAuth2(creds.clientId, creds.clientSecret, oauthRedirect('gmail'));
+  const auth = new google.auth.OAuth2(creds.clientId, creds.clientSecret, oauthRedirect(req, 'gmail'));
   res.redirect(auth.generateAuthUrl({ access_type: 'offline', prompt: 'consent', state: signOAuthState(dataDir, 'gmail'), scope: ['https://www.googleapis.com/auth/gmail.metadata'] }));
 });
 
@@ -216,7 +233,7 @@ app.get('/api/settings/oauth/gmail/callback', async (req, res) => {
   const creds = googleCreds();
   if (!creds || !verifyOAuthState(dataDir, state, 'gmail') || !code) { res.status(400).send(oauthResultPage('Connexion refusée', 'La demande Google a expiré ou a été annulée.')); return; }
   try {
-    const auth = new google.auth.OAuth2(creds.clientId, creds.clientSecret, oauthRedirect('gmail'));
+    const auth = new google.auth.OAuth2(creds.clientId, creds.clientSecret, oauthRedirect(req, 'gmail'));
     const { tokens } = await auth.getToken(code);
     if (!tokens.refresh_token) throw new Error('missing refresh token');
     writeGmailToken(tokens);
@@ -227,10 +244,10 @@ app.get('/api/settings/oauth/gmail/callback', async (req, res) => {
 // Last.fm web auth (auth.getSession). Redirect the user to last.fm to approve, then exchange the
 // one-time token for the account name. Needs the app key + secret registered once at
 // last.fm/api/account/create; the provider itself only reads with the key + user.
-app.get('/api/settings/oauth/lastfm/start', (_req, res) => {
+app.get('/api/settings/oauth/lastfm/start', (req, res) => {
   const creds = lastfmCreds();
   if (!creds) { res.status(409).send(oauthResultPage('Last.fm n’est pas prêt', 'Enregistrez d’abord la clé API et le secret Last.fm.')); return; }
-  const cb = `${publicBaseUrl()}/api/settings/oauth/lastfm/callback`;
+  const cb = `${callbackBaseFor(req)}/api/settings/oauth/lastfm/callback`;
   res.redirect(`https://www.last.fm/api/auth/?api_key=${encodeURIComponent(creds.apiKey)}&cb=${encodeURIComponent(cb)}`);
 });
 
@@ -346,12 +363,13 @@ app.post('/api/settings/oauth/github/poll', async (req, res) => {
 // Steam OpenID 2.0 — "Se connecter avec Steam" needs no app registration and no API key. Steam
 // redirects back with a claimed_id URL ending in the SteamID64; we verify it against Steam and
 // store the id (the Web API key is still entered once, separately).
-app.get('/api/settings/oauth/steam/start', (_req, res) => {
+app.get('/api/settings/oauth/steam/start', (req, res) => {
+  const base = callbackBaseFor(req);
   const url = new URL('https://steamcommunity.com/openid/login');
   url.searchParams.set('openid.ns', 'http://specs.openid.net/auth/2.0');
   url.searchParams.set('openid.mode', 'checkid_setup');
-  url.searchParams.set('openid.return_to', `${publicBaseUrl()}/api/settings/oauth/steam/callback`);
-  url.searchParams.set('openid.realm', publicBaseUrl());
+  url.searchParams.set('openid.return_to', `${base}/api/settings/oauth/steam/callback`);
+  url.searchParams.set('openid.realm', base);
   url.searchParams.set('openid.identity', 'http://specs.openid.net/auth/2.0/identifier_select');
   url.searchParams.set('openid.claimed_id', 'http://specs.openid.net/auth/2.0/identifier_select');
   res.redirect(url.toString());
