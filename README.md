@@ -9,19 +9,21 @@ configurés restent désactivés proprement et PostgreSQL n’est plus requis po
 
 ## État de cette branche
 
-La refonte est développée sur `feat/nohm` sans modification du dépôt distant.
+La refonte vit sur `feat/nohm` (dépôt `LeVraiLunatix/nohm`, `upstream` = le projet d’origine).
 
 - identité Nohm, icônes PWA et assets Windows générés ;
 - couche i18n centrale FR/EN, français par défaut ;
-- assistant de première configuration et espace Paramètres (comptes et clés chiffrés, OAuth, visibilité, cadence, raccourci jeu) ;
+- assistant de première configuration et espace Paramètres (comptes et clés chiffrés, visibilité, cadence, raccourci jeu) ;
+- **connexion par compte** : GitHub (device flow), Steam (OpenID), Spotify, Gmail et Last.fm — sans coller de jeton. Valorant / Clash / Roblox n’ont pas d’OAuth : clé saisie une fois, puis juste le pseudo ;
 - expérience Musique unifiée : Cider, Spotify, Last.fm et contrat MusicKit ;
 - mode jeu manuel avec raccourci `Alt+Maj+G` et réduction des rafraîchissements ;
 - démarrage local sans base en mémoire, PostgreSQL restant disponible pour la persistance ;
-- shell Tauri 2 préparé pour Windows (tray, lancement automatique, instance unique, MSI/NSIS).
+- shell Tauri 2 pour Windows (tray, lancement automatique, instance unique) — build NSIS/MSI en CI (`.github/workflows/desktop.yml`, sur tag `v*`).
+- site de présentation statique dans [`site/`](site/) — déployé sur Vercel.
 
-Le shell Windows n’est pas encore un installateur autonome : la chaîne Rust n’est pas présente sur
-la machine de développement et le serveur Express doit encore être emballé en sidecar. Voir
-[docs/WINDOWS.md](docs/WINDOWS.md).
+Le shell Windows n’est pas encore autonome : il enveloppe un serveur lancé à part (`npm start`),
+Express n’est pas encore emballé en sidecar, et le premier build CI peut demander une itération.
+Voir [docs/WINDOWS.md](docs/WINDOWS.md).
 
 ## Démarrage rapide
 

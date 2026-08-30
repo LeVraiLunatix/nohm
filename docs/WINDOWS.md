@@ -21,14 +21,26 @@ deux builds équivalents avant de figer la décision à long terme.
 - menu Ouvrir / Mode jeu / Quitter ;
 - cibles MSI et NSIS et artefacts d’updater configurés.
 
+## État de l’installateur
+
+Un workflow GitHub Actions (`.github/workflows/desktop.yml`) compile la coque sur `windows-latest`
+(qui fournit Rust et WebView2) et publie un **brouillon** de Release avec les installateurs NSIS et
+MSI. Il se déclenche manuellement (`workflow_dispatch`) ou en poussant un tag `v*`.
+
+La coque charge `http://127.0.0.1:4821` : l’application empaquetée **enveloppe un serveur lancé
+séparément** (`npm start`, ou un service Windows). Elle apporte la fenêtre, le tray, le démarrage
+automatique, l’instance unique et le raccourci mode jeu.
+
 ## Limites actuelles
 
-La machine de travail ne possède pas `rustc` ni `cargo`, donc le code Rust n’a pas pu être compilé.
-`npm run desktop:build` construit le frontend statique mais n’embarque pas encore Express. Il faut
-empaqueter Node + serveur comme sidecar, gérer son cycle de vie et l’arrêter proprement.
-
-La mise à jour automatique exige également une clé de signature et un endpoint HTTPS. Aucune clé ni
-URL fictive n’a été ajoutée.
+- La machine de travail ne possède pas `rustc` ni `cargo` : le code Rust n’a pas été compilé ici,
+  le premier passage CI peut demander une itération.
+- Express n’est pas encore empaqueté en **sidecar**. Étapes : bundler `server/src/index.ts` avec
+  esbuild (garder `node-pty` en externe, il est natif), embarquer un `node.exe` portable +
+  `node-pty`, ajouter le tout en `resources` de `tauri.conf.json`, et faire spawn/kill le process
+  depuis `src-tauri/src/lib.rs` (attendre `:4821` avant d’afficher la fenêtre).
+- La mise à jour automatique (`createUpdaterArtifacts` est à `false`) exige une clé de signature et
+  un endpoint HTTPS. Rien n’a été ajouté.
 
 ## Étapes de production
 

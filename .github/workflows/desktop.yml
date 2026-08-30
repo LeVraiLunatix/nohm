@@ -1,0 +1,67 @@
+name: Desktop (Windows installer)
+
+# Builds the Tauri shell into NSIS + MSI installers. The shell loads http://127.0.0.1:4821, so
+# the packaged app wraps a locally-run `npm start` server (or a Windows service) — bundling the
+# Express server as a sidecar is the next step, see docs/WINDOWS.md.
+#
+# Triggered manually, or by pushing a tag like `v0.1.0`. Publishes a **draft** GitHub Release.
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Resolve release tag
+        id: rel
+        shell: bash
+        run: |
+          if [ "${GITHUB_REF_TYPE}" = "tag" ]; then
+            echo "tag=${GITHUB_REF_NAME}" >> "$GITHUB_OUTPUT"
+            echo "name=Nohm ${GITHUB_REF_NAME}" >> "$GITHUB_OUTPUT"
+          else
+            echo "tag=v0.0.0-dev.${GITHUB_RUN_NUMBER}" >> "$GITHUB_OUTPUT"
+            echo "name=Nohm dev build ${GITHUB_RUN_NUMBER}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache cargo
+        uses: swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+
+      - run: npm ci
+
+      # The window points at the local server, which serves this build of the client.
+      - run: npm run build -w client
+
+      - name: Build installers + draft release
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tagName: ${{ steps.rel.outputs.tag }}
+          releaseName: ${{ steps.rel.outputs.name }}
+          releaseBody: |
+            Installateur Windows de la coque Nohm (NSIS + MSI).
+            La coque ouvre http://127.0.0.1:4821 : lancez le serveur avec `npm start`
+            (ou en service Windows) avant d'ouvrir l'app. Voir docs/WINDOWS.md.
+          releaseDraft: true
+          prerelease: false
+          projectPath: .

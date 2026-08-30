@@ -14,6 +14,7 @@
       {
         "label": "main",
         "title": "Nohm",
+        "url": "http://127.0.0.1:4821",
         "width": 1280,
         "height": 820,
         "minWidth": 900,
@@ -29,7 +30,7 @@
   "bundle": {
     "active": true,
     "targets": ["nsis", "msi"],
-    "createUpdaterArtifacts": true,
+    "createUpdaterArtifacts": false,
     "icon": ["icons/icon.png"],
     "shortDescription": "Centre de contrôle personnel local",
     "longDescription": "Nohm rassemble localement vos données, projets, outils d’IA, jeux et services musicaux.",

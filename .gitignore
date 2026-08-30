@@ -24,6 +24,10 @@ server/config.json
 # scripts/backfillValorantHistory.ts --apply dumps the previous cache row here before overwriting.
 server/.valorant-history-backup-*.json
 
+# Rust / Tauri build output
+src-tauri/target/
+src-tauri/gen/
+
 # Logs & OS noise
 *.log
 .DS_Store
