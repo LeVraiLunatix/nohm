@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { Fragment, useCallback, useEffect, useRef, useState } from 'react';
 import type { WidgetSummary } from '@nohm/shared';
 import { useI18n } from '../../i18n/I18nProvider';
 import { SERVICE_CATALOG, type ServiceDefinition } from './serviceCatalog';
@@ -184,6 +184,49 @@ export function SettingsDetail() {
     }
   };
 
+  // Rendered inline right under the service row it belongs to (see the service list below).
+  const connectionEditor = editing ? (
+    <form className="connection-panel" onSubmit={(event) => { event.preventDefault(); void saveConnection(); }}>
+      <div className="connection-panel__heading">
+        <div><span className="settings-eyebrow">{t('settings.connection')}</span><h3>{editing.name}</h3></div>
+        <button type="button" className="icon-button" aria-label={t('settings.close')} onClick={closeEditor}>×</button>
+      </div>
+      <div className="connection-fields">
+        {editing.fields?.map((field) => field.type === 'checkbox' ? (
+          <label className="connection-check" key={field.key}>
+            <input type="checkbox" checked={values[field.key] === '1'} onChange={(event) => setValues((current) => ({ ...current, [field.key]: event.target.checked ? '1' : '0' }))} />
+            <span>{field.label[locale]}</span>
+          </label>
+        ) : (
+          <label className="connection-field" key={field.key}>
+            <span>{field.label[locale]}{field.optional || editingConfigured ? '' : ' *'}</span>
+            <input required={!field.optional && !editingConfigured} type={field.type ?? 'text'} placeholder={editingConfigured ? t('settings.fieldSaved') : field.placeholder} value={values[field.key] ?? ''} autoComplete={field.type === 'password' ? 'new-password' : 'off'} onChange={(event) => setValues((current) => ({ ...current, [field.key]: event.target.value }))} />
+          </label>
+        ))}
+      </div>
+      {(editing.oauth === 'gmail' || editing.oauth === 'spotify' || editing.oauth === 'lastfm' || editing.oauth === 'steam') && callbackBase && (
+        <p className="connection-feedback">
+          {t('settings.redirectUri')}<br />
+          <code>{callbackBase}/api/settings/oauth/{editing.oauth}/callback</code>
+        </p>
+      )}
+      <div className="connection-actions">
+        <p className={`connection-feedback connection-feedback--${panelMsg ? 'saved' : saveState}`} role="status">
+          {githubCode
+            ? t('settings.githubCode', { code: githubCode })
+            : (panelMsg ?? (saveState === 'saved' ? t('settings.savedRestart') : saveState === 'error' ? t('settings.saveError') : t('settings.encryptedHint')))}
+        </p>
+        <div className="connection-actions__buttons">
+          {editing.id === 'weather' && <button type="button" className="settings-button settings-button--ghost" disabled={locating} onClick={() => void detectMyLocation()}>{locating ? t('settings.locating') : t('settings.useLocation')}</button>}
+          {editing.oauth === 'github' && <button type="button" className="settings-button settings-button--ghost" disabled={githubBusy} onClick={() => void connectGitHub()}>{githubBusy ? t('settings.githubConnecting') : t('settings.githubSignIn')}</button>}
+          {editing.oauth === 'steam' && <button type="button" className="settings-button settings-button--ghost" onClick={() => window.open('/api/settings/oauth/steam/start', '_blank', 'noopener,noreferrer')}>{t('settings.steamSignIn')}</button>}
+          {(editing.oauth === 'gmail' || editing.oauth === 'spotify' || editing.oauth === 'lastfm') && <button type="button" className="settings-button settings-button--ghost" disabled={!oauthReady.includes(editing.oauth)} onClick={() => window.open(`/api/settings/oauth/${editing.oauth}/start`, '_blank', 'noopener,noreferrer')}>{oauthReady.includes(editing.oauth) ? t('settings.oauthConnect') : t('settings.oauthAfterRestart')}</button>}
+          <button type="submit" className="settings-button" disabled={saveState === 'saving'}>{saveState === 'saving' ? t('settings.saving') : t('settings.save')}</button>
+        </div>
+      </div>
+    </form>
+  ) : null;
+
   return (
     <div className="settings-page">
       {wizard && <SetupWizard onClose={() => setWizard(false)} />}
@@ -251,76 +294,39 @@ export function SettingsDetail() {
             inputMode="url"
             placeholder={callbackBase.startsWith('http://127.0.0.1') ? 'https://mon-pc.mon-tailnet.ts.net' : callbackBase}
             value={publicUrlDraft}
-            onChange={(event) => setPublicUrlDraft(event.target.value)}
+            onChange={(event) => { setPublicUrlDraft(event.target.value); setPublicUrlState('idle'); }}
           />
         </label>
-        <p className="settings-help">
-          {t('settings.callbackBase', { base: callbackBase || '—' })}
-          {' · '}
+        <div className="connection-actions__buttons" style={{ marginTop: '0.75rem' }}>
           <button type="button" className="settings-button settings-button--small" disabled={publicUrlState === 'saving'} onClick={() => void savePublicUrl()}>
-            {publicUrlState === 'saving' ? t('settings.saving') : publicUrlState === 'saved' ? t('settings.savedRestart') : t('settings.save')}
+            {publicUrlState === 'saving' ? t('settings.saving') : t('settings.saveShort')}
           </button>
+        </div>
+        <p className={`settings-help${publicUrlState === 'saved' ? ' connection-feedback--saved' : ''}${publicUrlState === 'error' ? ' connection-feedback--error' : ''}`}>
+          {publicUrlState === 'saved' ? t('settings.savedRestart') : publicUrlState === 'error' ? t('settings.saveError') : t('settings.callbackBase', { base: callbackBase || '—' })}
         </p>
       </section>
       <section className="settings-card glass">
         <h2>{t('settings.services')}</h2>
         <p className="settings-help">{t('settings.servicesHint')}</p>
-        {editing && (
-          <form className="connection-panel" onSubmit={(event) => { event.preventDefault(); void saveConnection(); }}>
-            <div className="connection-panel__heading">
-              <div><span className="settings-eyebrow">{t('settings.connection')}</span><h3>{editing.name}</h3></div>
-              <button type="button" className="icon-button" aria-label={t('settings.close')} onClick={closeEditor}>×</button>
-            </div>
-            <div className="connection-fields">
-              {editing.fields?.map((field) => field.type === 'checkbox' ? (
-                <label className="connection-check" key={field.key}>
-                  <input type="checkbox" checked={values[field.key] === '1'} onChange={(event) => setValues((current) => ({ ...current, [field.key]: event.target.checked ? '1' : '0' }))} />
-                  <span>{field.label[locale]}</span>
-                </label>
-              ) : (
-                <label className="connection-field" key={field.key}>
-                  <span>{field.label[locale]}{field.optional || editingConfigured ? '' : ' *'}</span>
-                  <input required={!field.optional && !editingConfigured} type={field.type ?? 'text'} placeholder={editingConfigured ? t('settings.fieldSaved') : field.placeholder} value={values[field.key] ?? ''} autoComplete={field.type === 'password' ? 'new-password' : 'off'} onChange={(event) => setValues((current) => ({ ...current, [field.key]: event.target.value }))} />
-                </label>
-              ))}
-            </div>
-            {(editing.oauth === 'gmail' || editing.oauth === 'spotify' || editing.oauth === 'lastfm' || editing.oauth === 'steam') && callbackBase && (
-              <p className="connection-feedback">
-                {t('settings.redirectUri')}<br />
-                <code>{callbackBase}/api/settings/oauth/{editing.oauth}/callback</code>
-              </p>
-            )}
-            <div className="connection-actions">
-              <p className={`connection-feedback connection-feedback--${panelMsg ? 'saved' : saveState}`} role="status">
-                {githubCode
-                  ? t('settings.githubCode', { code: githubCode })
-                  : (panelMsg ?? (saveState === 'saved' ? t('settings.savedRestart') : saveState === 'error' ? t('settings.saveError') : t('settings.encryptedHint')))}
-              </p>
-              <div className="connection-actions__buttons">
-                {editing.id === 'weather' && <button type="button" className="settings-button settings-button--ghost" disabled={locating} onClick={() => void detectMyLocation()}>{locating ? t('settings.locating') : t('settings.useLocation')}</button>}
-                {editing.oauth === 'github' && <button type="button" className="settings-button settings-button--ghost" disabled={githubBusy} onClick={() => void connectGitHub()}>{githubBusy ? t('settings.githubConnecting') : t('settings.githubSignIn')}</button>}
-                {editing.oauth === 'steam' && <button type="button" className="settings-button settings-button--ghost" onClick={() => window.open('/api/settings/oauth/steam/start', '_blank', 'noopener,noreferrer')}>{t('settings.steamSignIn')}</button>}
-                {(editing.oauth === 'gmail' || editing.oauth === 'spotify' || editing.oauth === 'lastfm') && <button type="button" className="settings-button settings-button--ghost" disabled={!oauthReady.includes(editing.oauth)} onClick={() => window.open(`/api/settings/oauth/${editing.oauth}/start`, '_blank', 'noopener,noreferrer')}>{oauthReady.includes(editing.oauth) ? t('settings.oauthConnect') : t('settings.oauthAfterRestart')}</button>}
-                <button type="submit" className="settings-button" disabled={saveState === 'saving'}>{saveState === 'saving' ? t('settings.saving') : t('settings.save')}</button>
-              </div>
-            </div>
-          </form>
-        )}
         <div className="service-list">
           {SERVICE_CATALOG.map((service) => {
             const runtimeStatus = serviceStatus(service.widgetIds, summaries);
             const status = runtimeStatus === 'notConfigured' && configured.includes(service.id) ? 'offline' : runtimeStatus;
             return (
-              <article className="service-row" key={service.id}>
-                <div className={`service-status service-status--${status}`} aria-hidden />
-                <div className="service-main"><strong>{service.name}</strong><p>{service.setup[locale]}</p></div>
-                <dl className="service-meta">
-                  <div><dt>{t('settings.permissions')}</dt><dd>{service.permissions[locale]}</dd></div>
-                  <div><dt>{t('settings.refresh')}</dt><dd>{service.refresh}{service.localOnly ? ` · ${t('settings.localOnly')}` : ''}</dd></div>
-                </dl>
-                <span className="service-state">{t(`settings.${status}`)}</span>
-                {service.fields ? <button type="button" className="settings-button settings-button--small" onClick={() => openEditor(service)}>{configured.includes(service.id) ? t('settings.modify') : t('settings.configure')}</button> : <button type="button" className="settings-button settings-button--small" disabled={!service.widgetIds[0] || testing === service.id} onClick={() => void test(service.widgetIds[0]!, service.id)}>{testing === service.id ? t('settings.testing') : t('settings.test')}</button>}
-              </article>
+              <Fragment key={service.id}>
+                <article className="service-row">
+                  <div className={`service-status service-status--${status}`} aria-hidden />
+                  <div className="service-main"><strong>{service.name}</strong><p>{service.setup[locale]}</p></div>
+                  <dl className="service-meta">
+                    <div><dt>{t('settings.permissions')}</dt><dd>{service.permissions[locale]}</dd></div>
+                    <div><dt>{t('settings.refresh')}</dt><dd>{service.refresh}{service.localOnly ? ` · ${t('settings.localOnly')}` : ''}</dd></div>
+                  </dl>
+                  <span className="service-state">{t(`settings.${status}`)}</span>
+                  {service.fields ? <button type="button" className="settings-button settings-button--small" onClick={() => editing?.id === service.id ? closeEditor() : openEditor(service)}>{configured.includes(service.id) ? t('settings.modify') : t('settings.configure')}</button> : <button type="button" className="settings-button settings-button--small" disabled={!service.widgetIds[0] || testing === service.id} onClick={() => void test(service.widgetIds[0]!, service.id)}>{testing === service.id ? t('settings.testing') : t('settings.test')}</button>}
+                </article>
+                {editing?.id === service.id && connectionEditor}
+              </Fragment>
             );
           })}
         </div>

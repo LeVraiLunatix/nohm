@@ -1,5 +1,29 @@
 /* The dashboard's section cards and the shared section icon/arrow chrome. */
 
+/* Masonry layout: one column on phones, packed multi-column on wider screens. CSS `columns`
+   (rather than `grid` + `grid-template-rows: masonry`, still Firefox-only) so every card keeps
+   its natural height and the shorter ones don't leave gaps. Card widths are uniform, so the
+   per-section `grid-column: span N` rules in desktop.css no longer apply here. */
+.dashboard-grid {
+  column-gap: 1rem;
+  column-count: 1;
+}
+
+.dashboard-grid > * {
+  break-inside: avoid;
+  margin-bottom: 1rem;
+}
+
+@media (min-width: 1024px) {
+  .dashboard-grid {
+    column-count: 2;
+    column-gap: 1.25rem;
+  }
+  .dashboard-grid > * {
+    margin-bottom: 1.25rem;
+  }
+}
+
 .dashboard-section-heading {
   margin: 2.5rem 0 1rem;
   padding: 0 0.25rem;

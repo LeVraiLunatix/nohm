@@ -222,7 +222,7 @@ function Overview({ now }: Readonly<{ now: Date }>) {
         <p>{t('overview.sectionsHint')}</p>
       </div>
       <motion.div
-        className="dashboard-grid grid grid-cols-1 gap-4 lg:grid-cols-12"
+        className="dashboard-grid"
         variants={overviewGridVariants}
         initial={runEntrance ? 'hidden' : false}
         animate="visible"
